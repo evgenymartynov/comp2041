@@ -8,7 +8,7 @@ my $pat_special = ",;'\"{}()";
 my $pat_kw = join '|', qw(print shift undef);
 
 my @patterns = (
-  { 'name' => 'comment',    're' => qr(#.*\n) },
+  { 'name' => 'comment',    're' => qr(#.*\n), 'chomp' => 1 },
 
   { 'name' => 'string',     're' => '"(\\\.|[^"\\\])*"' },
   { 'name' => 'string',     're' => '\'(\\\.|[^\'\\\])*\'' },
@@ -22,7 +22,7 @@ my @patterns = (
 
   { 'name' => 'keyword',    're' => $pat_kw },
 
-  { 'name' => 'whitespace', 're' => qr([$pat_space]+) },
+  { 'name' => 'whitespace', 're' => qr([$pat_space]+) , 'ignore' => 1 },
   { 'name' => 'word',       're' => qr([^$pat_space$pat_special]+) },
 );
 
@@ -90,6 +90,9 @@ sub tokenise {
 
     # printf("%12s: %s\n", $tok_type, $match);
   }
+
+  my %eof = ( 'name' => 'eof' );
+  push @tokens, \%eof;
 
   return \@tokens;
 }
