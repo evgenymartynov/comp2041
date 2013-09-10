@@ -58,6 +58,30 @@ sub p_string {
   return \%node;
 }
 
+sub p_literal_number {
+  my @cld = ();
+  my %node = (
+    'name' => 'literal_number',
+    'cld' => \@cld,
+  );
+
+  push @cld, expect('number');
+
+  return \%node;
+}
+
+sub p_literal_op {
+  my @cld = ();
+  my %node = (
+    'name' => 'literal_op',
+    'cld' => \@cld,
+  );
+
+  push @cld, expect('operator');
+
+  return \%node;
+}
+
 sub p_arithmetic_expression {
   my @cld = ();
   my %node = (
@@ -66,6 +90,23 @@ sub p_arithmetic_expression {
   );
 
   push @cld, expect('number');
+
+  my $tok_stop = sub {
+    my @stops = qw(comma semicolon);
+    return $tok{name} ~~ @stops;
+  };
+
+  while ( !$tok_stop->() ) {
+    if ($tok{name} eq 'number') {
+      push @cld, p_literal_number();
+    } elsif ($tok{name} eq 'operator') {
+      push @cld, p_literal_op();
+    } else {
+      display(\%tok);
+      display(\@all_tokens);
+      die "p_arithmetic_expression: not sure what to do with this: ", Dumper(\%tok);
+    }
+  }
 
   return \%node;
 }
