@@ -1,0 +1,2 @@
+date:start:end:description
+10/09:1600:1900:Wrote a lexer and very trivial translator
