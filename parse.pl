@@ -3,6 +3,8 @@
 use strict;
 use Data::Dumper;
 
+require Parser;
+
 my $pat_space = " \t\n";
 my $pat_special = ",;'\"{}()";
 my $pat_kw = join '|', qw(print shift undef);
@@ -145,9 +147,13 @@ sub translate {
   }
 }
 
+sub parse {
+  Parser::parse(@_);
+}
+
 my @data = <>;
 my $data = join '', @data;
 
 my $tokens__ = tokenise($data);
 my @tokens = @$tokens__;
-translate(\@tokens);
+parse(\@tokens);
