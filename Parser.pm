@@ -20,17 +20,54 @@ sub expect {
   my %actual = %{shift @all_tokens};
   my $actual = %actual ? $actual{name} : 'eof';
 
-  die("expected $exp but got $actual instead;\n ", Dumper(\%actual))
+  die("expected $exp but got $actual instead;\n ", Dumper(\%actual), "\n", Dumper(\@all_tokens))
       unless $exp eq $actual;
 
   %tok = %{peek()};
-  1;
+  return \%actual;
 }
 
 sub consume {
   my $popped = shift @all_tokens;
   %tok = %{peek()};
   return $popped;
+}
+
+
+sub p_template {
+  my @cld = ();
+  my %node = (
+    'name' => 'templ',
+    'cld' => \@cld,
+  );
+
+
+  return \%node;
+}
+
+
+sub p_string {
+  my @cld = ();
+  my %node = (
+    'name' => 'string',
+    'cld' => \@cld,
+  );
+
+  push @cld, expect('string');
+
+  return \%node;
+}
+
+sub p_arithmetic_expression {
+  my @cld = ();
+  my %node = (
+    'name' => 'arithmetic_expr',
+    'cld' => \@cld,
+  );
+
+  push @cld, expect('number');
+
+  return \%node;
 }
 
 sub p_expression {
@@ -41,13 +78,20 @@ sub p_expression {
   );
 
   my $tok_stop = sub {
-    my %tok = %{shift @_};
     my @stops = qw(comma semicolon);
     return $tok{name} ~~ @stops;
   };
 
-  while (!$tok_stop->(\%tok)) {
-    push @cld, consume();
+  while ( !$tok_stop->() ) {
+    if ($tok{name} eq 'string') {
+      push @cld, p_string();
+    } elsif ($tok{name} eq 'number') {
+      push @cld, p_arithmetic_expression();
+    } else {
+      display(\%tok);
+      display(\@all_tokens);
+      die "p_expression: not sure what to do with this: ", Dumper(\%tok);
+    }
   }
 
   return \%node;
@@ -60,20 +104,20 @@ sub p_comma_sep_expressions {
     'cld' => \@cld,
   );
 
-  my $tok_stop = sub {
-    my %tok = %{shift @_};
-    my @stops = qw(semicolon);
-    return $tok{name} ~~ @stops;
-  };
-
-  while (!$tok_stop->(\%tok)) {
+  while (1) {
     push @cld, p_expression();
+
+    if ($tok{name} eq 'comma') {
+      expect('comma');
+    } else {
+      last;
+    }
   }
 
   return \%node;
 }
 
-sub p_print_expression {
+sub p_print_statement {
   my @cld = ();
   my %node = (
     'name' => 'print_expr',
@@ -94,7 +138,7 @@ sub p_comment {
     'cld' => \@cld,
   );
 
-  push @cld, consume();
+  push @cld, expect('comment');
 
   return \%node;
 }
@@ -108,13 +152,13 @@ sub p_statement {
 
   if ($tok{name} eq 'keyword') {
     if ($tok{match} eq 'print') {
-      return p_print_expression();
+      return p_print_statement();
     }
   } elsif ($tok{name} eq 'comment') {
     return p_comment();
   }
 
-  die "Not sure what to do with this: ", Dumper(\%tok);
+  die "p_statement: not sure what to do with this: ", Dumper(\%tok);
 }
 
 sub p_program {
@@ -141,6 +185,7 @@ sub parse {
 
   my %tree = %{p_program()};
   display(\%tree);
+  print "## Success!\n";
 }
 
 1;

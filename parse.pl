@@ -24,6 +24,9 @@ my @patterns = (
 
   { 'name' => 'keyword',    're' => $pat_kw },
 
+  { 'name' => 'number',     're' => '-?[1-9][0-9]*' },
+  { 'name' => 'operator',   're' => '[+-/*]' },
+
   { 'name' => 'whitespace', 're' => qr([$pat_space]+) , 'ignore' => 1 },
   { 'name' => 'word',       're' => qr([^$pat_space$pat_special]+) },
 );
