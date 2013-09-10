@@ -1,2 +1,3 @@
 date:start:end:description
 10/09:1600:1900:Wrote a lexer and very trivial translator
+10/09:2115:1315:Wrote AST capable of parsing strings, comments, and prints
