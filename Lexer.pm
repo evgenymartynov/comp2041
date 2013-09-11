@@ -6,6 +6,7 @@ my $pat_special = ",;'\"{}()";
 my $pat_variable_first = 'A-Za-z_';
 my $pat_variable = "${pat_variable_first}0-9";
 my $pat_kw = join '|', qw(print printf shift undef);
+my $pat_comparisons = join '|', qw(< > <= >= == !=);
 
 my @patterns = (
   { 'type' => 'comment',    're' => qr(#.*\n), 'chomp' => 1 },
@@ -21,11 +22,14 @@ my @patterns = (
   { 'type' => 'parenend',   're' => '\)' },
 
   { 'type' => 'keyword',    're' => qr(\b($pat_kw)\b) },
+  { 'type' => 'if',         're' => qr(\bif\b) },
+  { 'type' => 'else',       're' => qr(\belse\b) },
 
-  { 'type' => 'number',     're' => '-?[1-9][0-9]*' },
+  { 'type' => 'number',     're' => qr(-?([1-9][0-9]*|0)\b) },
   { 'type' => 'operator',   're' => '[+-/*]' },
   { 'type' => 'scalar',     're' => "\\\$[$pat_variable_first][$pat_variable]*" },
 
+  { 'type' => 'comparison', 're' => $pat_comparisons },
   { 'type' => 'assignment', 're' => '=' },
 
   { 'type' => 'whitespace', 're' => qr([$pat_space]+) , 'ignore' => 1 },

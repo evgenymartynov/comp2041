@@ -4,6 +4,8 @@ use strict;
 use Data::Dumper;
 use Switch;
 
+use feature qw(switch);
+
 our (@all_tokens, %tok);
 
 sub display {
@@ -34,7 +36,7 @@ sub consume {
   return $popped;
 }
 
-sub pinternal_parenthesise {
+sub p_parenthesise {
   return p_node('parenthesise', @_);
 }
 
@@ -42,7 +44,7 @@ sub pinternal_printfmt {
   my $fmt_ref = shift;
   my $variadic_ref = shift;
 
-  my @modulo_args = ($fmt_ref, pinternal_parenthesise($variadic_ref));
+  my @modulo_args = ($fmt_ref, p_parenthesise($variadic_ref));
 
   my %modulo = (
     'operator' => '%',
@@ -85,7 +87,6 @@ sub is_string_type {
   my @string_types = qw(comma_sep_string_concat string);
   return $type ~~ @string_types;
 }
-
 
 sub p_leaf {
   my %node = (
@@ -199,6 +200,10 @@ sub p_literal_op {
   return p_leafget('operator');
 }
 
+sub p_literal_comparison {
+  return p_leafget('comparison');
+}
+
 sub p_comment {
   return p_leafget('comment');
 }
@@ -256,6 +261,26 @@ sub p_add_expression {
   return \%node;
 }
 
+sub p_comparison_expression {
+  my @cld = ();
+  my %node = (
+    'type' => 'comparison',
+    'operator' => '???',
+    'cld' => \@cld,
+  );
+
+  my $left_ref = p_add_expression();
+  push @cld, $left_ref;
+
+  if ($tok{type} eq 'comparison') {
+    my %op = %{p_literal_comparison()};
+    $node{operator} = ${op}{value};
+    push @cld, p_add_expression();
+  }
+
+  return \%node;
+}
+
 sub p_expression {
   my @cld = ();
   my %node = (
@@ -263,14 +288,28 @@ sub p_expression {
     'cld' => \@cld,
   );
 
-  if ($tok{type} eq 'string') {
-    push @cld, p_string();
-  } elsif ($tok{type} eq 'number' || $tok{type} eq 'scalar') {
-    push @cld, p_add_expression();
-  } else {
-    display(\%tok);
-    display(\@all_tokens);
-    die ${node}{type} . ": not sure what to do with this: ", Dumper(\%tok);
+  given ($tok{type}) {
+    when ('string') {
+      push @cld, p_string();
+    }
+
+    when (['number', 'scalar']) {
+      push @cld, p_comparison_expression();
+    }
+
+    when ('parenbegin') {
+      expect('parenbegin');
+      my $expression_ref = p_expression();
+      expect('parenend');
+
+      push @cld, p_parenthesise($expression_ref);
+    }
+
+    default {
+      display(\%tok);
+      display(\@all_tokens);
+      die ${node}{type} . ": not sure what to do with this: ", Dumper(\%tok);
+    }
   }
 
   return $cld[0];
@@ -357,40 +396,82 @@ sub p_value {
 
 sub p_assignment {
   my $lvalue_ref = p_expression();
-  if (!is_assignment) {
+
+  if (is_assignment) {
+    my $assignment_ref = p_literal_assignment();
+    my $rvalue_ref = p_assignment();
+
+    return p_node('assign', $lvalue_ref, $rvalue_ref);
+  } else {
     return $lvalue_ref;
   }
+}
 
-  my $assignment_ref = p_literal_assignment();
-  my $rvalue_ref = p_assignment();
+sub p_body_expression {
+  my @cld = ();
+  my %node = (
+    'type' => 'body',
+    'cld' => \@cld,
+  );
 
-  return p_node('assign', $lvalue_ref, $rvalue_ref);
+  expect('blockbegin');
+
+  while ($tok{type} ne 'blockend') {
+    my $node_ref = p_statement();
+    push @cld, $node_ref;
+  }
+
+  expect('blockend');
+
+  return \%node;
+}
+
+sub p_if_expression {
+  expect('if');
+
+  my $condition_ref = p_expression();
+  my $if_true = p_body_expression();
+  my $if_false = undef;
+
+  if ($tok{type} eq 'else') {
+    expect('else');
+    $if_false = p_body_expression();
+  }
+
+  return p_node('if_expr', $condition_ref, $if_true, $if_false);
 }
 
 sub p_statement {
   my $result_ref = undef;
 
-  if ($tok{type} eq 'comment') {
-    # No need to do anything else here
-    return p_comment();
-  }
+  given ($tok{type}) {
+    when ('comment') {
+      return p_comment();
+    }
 
-  if ($tok{type} eq 'keyword') {
-    switch ($tok{match}) {
-      case 'print'    {
-        $result_ref = p_print_statement();
-      }
+    when ('keyword') {
+      given ($tok{match}) {
+        when ('print')    {
+          $result_ref = p_print_statement();
+        }
 
-      case 'printf'   {
-        $result_ref = p_printfmt_statement();
-      }
+        when ('printf')   {
+          $result_ref = p_printfmt_statement();
+        }
 
-      default         {
-        die "Forgot to catch a keyword :(";
+        default         {
+          die "Forgot to catch a keyword :(";
+        }
       }
     }
-  } else {
-    $result_ref = p_assignment();
+
+    when ('if') {
+      return p_if_expression();
+    }
+
+    default             {
+      $result_ref = p_assignment();
+    }
   }
 
   expect('semicolon');
