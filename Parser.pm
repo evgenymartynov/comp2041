@@ -429,6 +429,15 @@ sub p_if_expression {
   return p_node('if_expr', $condition_ref, $if_true, $if_false);
 }
 
+sub p_while_expression {
+  expect('while');
+
+  my $condition_ref = p_expression();
+  my $body_ref = p_body_expression();
+
+  return p_node('while_expr', $condition_ref, $body_ref);
+}
+
 sub p_statement {
   my $result_ref = undef;
 
@@ -455,6 +464,10 @@ sub p_statement {
 
     when ('if') {
       return p_if_expression();
+    }
+
+    when ('while') {
+      return p_while_expression();
     }
 
     default             {

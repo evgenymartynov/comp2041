@@ -164,6 +164,18 @@ sub compile_if {
   compile_node(\%cs, $false_ref) if defined($false_ref);
 }
 
+sub compile_while {
+  my %cs = %{shift @_};
+  my %node = %{shift @_};
+
+  my $cond_ref = shift @{$node{cld}};
+  my $body_ref = shift @{$node{cld}};
+
+  emit('while');
+  compile_node(\%cs, $cond_ref);
+  compile_node(\%cs, $body_ref);
+}
+
 sub compile_body {
   my %cs = %{shift @_};
   my %node = %{shift @_};
@@ -224,6 +236,7 @@ sub compile_node {
     case 'print_expr'       { compile_print           (\%cs, \%node); }
 
     case 'if_expr'          { compile_if              (\%cs, \%node); }
+    case 'while_expr'       { compile_while           (\%cs, \%node); }
 
     case 'parenthesise'     { compile_parenthesise    (\%cs, \%node); }
 

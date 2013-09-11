@@ -24,6 +24,7 @@ my @patterns = (
   { 'type' => 'keyword',    're' => qr(\b($pat_kw)\b) },
   { 'type' => 'if',         're' => qr(\bif\b) },
   { 'type' => 'else',       're' => qr(\belse\b) },
+  { 'type' => 'while',      're' => qr(\bwhile\b) },
 
   { 'type' => 'number',     're' => qr(-?([1-9][0-9]*|0)\b) },
   { 'type' => 'operator',   're' => '[+-/*]' },
