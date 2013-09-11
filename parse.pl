@@ -114,6 +114,5 @@ sub parse {
 my @data = <>;
 my $data = join '', @data;
 
-my $tokens__ = tokenise($data);
-my @tokens = @$tokens__;
-parse(\@tokens);
+my $token_ref = tokenise($data);
+my $tree_ref = parse($token_ref);

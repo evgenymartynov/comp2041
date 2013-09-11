@@ -307,6 +307,8 @@ sub parse {
   my %tree = %{p_program()};
   display(\%tree);
   print "## Success!\n";
+
+  return \%tree;
 }
 
 1;
