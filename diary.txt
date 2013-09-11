@@ -11,3 +11,4 @@ date:start:end:description
 12/09:0000:0135:Why so sleepy, son? Let's put a pillow under that face.
 12/09:0145:0225:Added printf support. Can now print out a perl quine that Alex gave me.
 12/09:0225:0250:Fixed issues caused by str() calls. What is sleep.
+12/09:0300:0415:Added if() statements and comparisons. Come at me, sleep.

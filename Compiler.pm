@@ -18,6 +18,12 @@ sub emit {
   print shift @_, " ";
 }
 
+sub emit_newline {
+  my %cs = %{shift @_};
+
+  print "\n" . ('  ' x $cs{depth});
+}
+
 sub lookup_variable {
   my $var = shift;
   $var =~ s/^\$//;
@@ -144,13 +150,44 @@ sub compile_binary_op_expr {
   }
 }
 
+sub compile_if {
+  my %cs = %{shift @_};
+  my %node = %{shift @_};
+
+  my $cond_ref = shift @{$node{cld}};
+  my $true_ref = shift @{$node{cld}};
+  my $false_ref = shift @{$node{cld}};
+
+  emit('if');
+  compile_node(\%cs, $cond_ref);
+  compile_node(\%cs, $true_ref);
+  compile_node(\%cs, $false_ref) if defined($false_ref);
+}
+
+sub compile_body {
+  my %cs = %{shift @_};
+  my %node = %{shift @_};
+
+  $cs{depth}++;
+
+  emit(':');
+  emit_newline(\%cs);
+
+  for my $node_ref (@{$node{cld}}) {
+    compile_node(\%cs, $node_ref);
+    emit_newline(\%cs);
+  }
+
+  $cs{depth}--;
+}
+
 sub compile_program {
   my %cs = %{shift @_};
   my %node = %{shift @_};
 
   emit_string("#!/usr/bin/python2 -u");
   emit_string("import sys");
-  emit_string("");
+  emit_newline(\%cs);
 
   my @cld = @{$node{cld}};
 
@@ -161,18 +198,9 @@ sub compile_program {
 
   for my $node_ref (@cld) {
     compile_node(\%cs, $node_ref);
-    emit_string("");
+    emit_newline(\%cs);
   }
 }
-
-# sub compile_children {
-#   my %cs = %{shift @_};
-#   my %node = %{shift @_};
-# 
-#   for my $node_ref (@{$node{cld}}) {
-#     compile_node(\%cs, $node_ref);
-#   }
-# }
 
 sub compile_node {
   my %cs = %{shift @_};
@@ -180,6 +208,8 @@ sub compile_node {
 
   switch ($node{type}) {
     case 'program'          { compile_program         (\%cs, \%node); }
+    case 'body'             { compile_body            (\%cs, \%node); }
+
     case 'comment'          { compile_comment         (\%cs, \%node); }
     case 'number'           { compile_number          (\%cs, \%node); }
     case 'string'           { compile_string          (\%cs, \%node); }
@@ -188,9 +218,12 @@ sub compile_node {
     case 'assign'           { compile_assign          (\%cs, \%node); }
     case 'add_expr'         { compile_binary_op_expr  (\%cs, \%node); }
     case 'mul_expr'         { compile_binary_op_expr  (\%cs, \%node); }
+    case 'comparison'       { compile_binary_op_expr  (\%cs, \%node); }
     case 'comma_sep_expr'   { compile_comma_sep_expr  (\%cs, \%node); }
 
     case 'print_expr'       { compile_print           (\%cs, \%node); }
+
+    case 'if_expr'          { compile_if              (\%cs, \%node); }
 
     case 'parenthesise'     { compile_parenthesise    (\%cs, \%node); }
 
@@ -208,7 +241,9 @@ sub compile_node {
 
 sub compile {
   my $ast_ref = shift;
-  my %compile_state = ();
+  my %compile_state = (
+    'depth' => 0,
+  );
 
   compile_node(\%compile_state, $ast_ref);
   print "## Compiled!\n";
