@@ -44,6 +44,40 @@ sub compile_number {
   emit($node{value});
 }
 
+sub compile_comma_sep_expr_onlist {
+  my %cs = %{shift @_};
+  my @cld = @_;
+
+  my $first = 1;
+  for my $node_ref (@cld) {
+    emit(",") unless $first;
+    $first = 0;
+
+    compile_node(\%cs, $node_ref);
+  }
+}
+
+sub compile_function_call {
+  my %cs = %{shift @_};
+  my $funcname = shift @_;
+  my @args = @_;
+
+  emit($funcname);
+  emit("(");
+  compile_comma_sep_expr_onlist(\%cs, @args);
+  emit(")");
+}
+
+sub compile_range {
+  my %cs = %{shift @_};
+  my %node = %{shift @_};
+
+  my $from_ref = shift @{$node{cld}};
+  my $to_ref = shift @{$node{cld}};
+
+  compile_function_call(\%cs, 'xrange', $from_ref, $to_ref);
+}
+
 sub compile_stringify {
   my %cs = %{shift @_};
   my %node = %{shift @_};
@@ -84,13 +118,7 @@ sub compile_comma_sep_expr {
   my %cs = %{shift @_};
   my %node = %{shift @_};
 
-  my $first = 1;
-  for my $node_ref (@{$node{cld}}) {
-    emit(",") unless $first;
-    $first = 0;
-
-    compile_node(\%cs, $node_ref);
-  }
+  compile_comma_sep_expr_onlist(\%cs, @{$node{cld}});
 }
 
 sub compile_comma_sep_string_concat {
@@ -176,6 +204,21 @@ sub compile_while {
   compile_node(\%cs, $body_ref);
 }
 
+sub compile_foreach {
+  my %cs = %{shift @_};
+  my %node = %{shift @_};
+
+  my $iterator_ref = shift @{$node{cld}};
+  my $range_ref = shift @{$node{cld}};
+  my $body_ref = shift @{$node{cld}};
+
+  emit('for');
+  compile_node(\%cs, $iterator_ref);
+  emit('in');
+  compile_node(\%cs, $range_ref);
+  compile_node(\%cs, $body_ref);
+}
+
 sub compile_body {
   my %cs = %{shift @_};
   my %node = %{shift @_};
@@ -226,6 +269,7 @@ sub compile_node {
     case 'number'           { compile_number          (\%cs, \%node); }
     case 'string'           { compile_string          (\%cs, \%node); }
     case 'scalar'           { compile_scalar          (\%cs, \%node); }
+    case 'range'            { compile_range           (\%cs, \%node); }
 
     case 'assign'           { compile_assign          (\%cs, \%node); }
     case 'add_expr'         { compile_binary_op_expr  (\%cs, \%node); }
@@ -237,6 +281,7 @@ sub compile_node {
 
     case 'if_expr'          { compile_if              (\%cs, \%node); }
     case 'while_expr'       { compile_while           (\%cs, \%node); }
+    case 'foreach_expr'     { compile_foreach         (\%cs, \%node); }
 
     case 'parenthesise'     { compile_parenthesise    (\%cs, \%node); }
 

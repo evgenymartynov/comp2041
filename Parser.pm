@@ -62,11 +62,6 @@ sub pinternal_printfmt {
   return \%print_invocation;
 }
 
-sub is_expression_end {
-  my @expression_terminators = qw(comma semicolon);
-  return $tok{type} ~~ @expression_terminators;
-}
-
 sub is_additive {
   my @additives = qw(+ -);
   return $tok{type} eq 'operator' && $tok{match} ~~ @additives;
@@ -269,6 +264,23 @@ sub p_comparison_expression {
   return \%node;
 }
 
+sub p_range_expression {
+  my $left_ref = p_comparison_expression();
+
+  if ($tok{type} ne 'range') {
+    return $left_ref;
+  }
+
+  expect('range');
+  my $right_incl_ref = p_comparison_expression();
+
+  # Fix up incl/excl ranges
+  my $right_excl_ref = p_node('add_expr', $right_incl_ref, p_node_with_value('number', '1'));
+  ${$right_excl_ref}{operator} = '+';
+
+  return p_node('range', $left_ref, $right_excl_ref);
+}
+
 sub p_expression {
   my @cld = ();
   my %node = (
@@ -282,7 +294,7 @@ sub p_expression {
     }
 
     when (['number', 'scalar']) {
-      push @cld, p_comparison_expression();
+      push @cld, p_range_expression();
     }
 
     when ('parenbegin') {
@@ -315,7 +327,7 @@ sub p_comma_sep_expressions {
 
     if ($tok{type} eq 'comma') {
       expect('comma');
-    } elsif ($tok{type} eq 'semicolon') {
+    } elsif ($tok{type} eq 'semicolon' || $tok{type} eq 'blockend') {
       last;
     }
   }
@@ -438,6 +450,16 @@ sub p_while_expression {
   return p_node('while_expr', $condition_ref, $body_ref);
 }
 
+sub p_foreach_expression {
+  expect('foreach');
+
+  my $iterator_ref = p_scalar();
+  my $range_ref = p_expression();
+  my $body_ref = p_body_expression();
+
+  return p_node('foreach_expr', $iterator_ref, $range_ref, $body_ref);
+}
+
 sub p_statement {
   my $result_ref = undef;
 
@@ -470,12 +492,32 @@ sub p_statement {
       return p_while_expression();
     }
 
+    when ('foreach') {
+      return p_foreach_expression();
+    }
+
+    when ('blockend') {
+      return;
+    }
+
     default             {
       $result_ref = p_assignment();
     }
   }
 
-  expect('semicolon');
+  given ($tok{type}) {
+    when ('semicolon') {
+      expect('semicolon');
+    }
+
+    when ('blockend') {
+      break;
+    }
+
+    default {
+      die 'Expected semicolon or block end, got this instead: ', display(\%tok);;
+    }
+  }
 
   if (defined($result_ref)) {
     return $result_ref;
