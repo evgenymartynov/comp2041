@@ -162,7 +162,7 @@ sub p_arithmetic_expression {
     } else {
       display(\%tok);
       display(\@all_tokens);
-      die "p_arithmetic_expression: not sure what to do with this: ", Dumper(\%tok);
+      die ${node}{name} . ": not sure what to do with this: ", Dumper(\%tok);
     }
   } while (!is_expression_end);
 
@@ -184,7 +184,7 @@ sub p_expression {
     } else {
       display(\%tok);
       display(\@all_tokens);
-      die "p_expression: not sure what to do with this: ", Dumper(\%tok);
+      die ${node}{name} . ": not sure what to do with this: ", Dumper(\%tok);
     }
   }
 
@@ -244,7 +244,7 @@ sub p_statement {
     return p_comment();
   }
 
-  die "p_statement: not sure what to do with this: ", Dumper(\%tok);
+  die ${node}{name} . ": not sure what to do with this: ", Dumper(\%tok);
 }
 
 sub p_program {
