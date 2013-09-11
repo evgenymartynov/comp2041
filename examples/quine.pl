@@ -1,0 +1,1 @@
+$q="'";$a='$q="%s";$a=%s%s%s;printf $a,$q,$q,$a,$q;';printf $a,$q,$q,$a,$q;
