@@ -12,28 +12,28 @@ my $pat_variable = "${pat_variable_first}0-9";
 my $pat_kw = join '|', qw(print shift undef);
 
 my @patterns = (
-  { 'name' => 'comment',    're' => qr(#.*\n), 'chomp' => 1 },
+  { 'type' => 'comment',    're' => qr(#.*\n), 'chomp' => 1 },
 
-  { 'name' => 'string',     're' => '"(\\\.|[^"\\\])*"' },
-  { 'name' => 'string',     're' => '\'(\\\.|[^\'\\\])*\'' },
+  { 'type' => 'string',     're' => '"(\\\.|[^"\\\])*"' },
+  { 'type' => 'string',     're' => '\'(\\\.|[^\'\\\])*\'' },
 
-  { 'name' => 'comma',      're' => qr(,) },
-  { 'name' => 'semicolon',  're' => qr(;) },
-  { 'name' => 'blockbegin', 're' => qr({) },
-  { 'name' => 'blockend',   're' => qr(}) },
-  { 'name' => 'parenbegin', 're' => '\(' },
-  { 'name' => 'parenend',   're' => '\)' },
+  { 'type' => 'comma',      're' => qr(,) },
+  { 'type' => 'semicolon',  're' => qr(;) },
+  { 'type' => 'blockbegin', 're' => qr({) },
+  { 'type' => 'blockend',   're' => qr(}) },
+  { 'type' => 'parenbegin', 're' => '\(' },
+  { 'type' => 'parenend',   're' => '\)' },
 
-  { 'name' => 'keyword',    're' => $pat_kw },
+  { 'type' => 'keyword',    're' => $pat_kw },
 
-  { 'name' => 'number',     're' => '-?[1-9][0-9]*' },
-  { 'name' => 'operator',   're' => '[+-/*]' },
-  { 'name' => 'scalar',     're' => "\\\$[$pat_variable_first][$pat_variable]*" },
+  { 'type' => 'number',     're' => '-?[1-9][0-9]*' },
+  { 'type' => 'operator',   're' => '[+-/*]' },
+  { 'type' => 'scalar',     're' => "\\\$[$pat_variable_first][$pat_variable]*" },
 
-  { 'name' => 'assignment', 're' => '=' },
+  { 'type' => 'assignment', 're' => '=' },
 
-  { 'name' => 'whitespace', 're' => qr([$pat_space]+) , 'ignore' => 1 },
-  { 'name' => 'word',       're' => qr([^$pat_space$pat_special]+) },
+  { 'type' => 'whitespace', 're' => qr([$pat_space]+) , 'ignore' => 1 },
+  { 'type' => 'word',       're' => qr([^$pat_space$pat_special]+) },
 );
 
 sub is_terminal_token_type {
@@ -59,7 +59,7 @@ sub get_next_token {
 
     if ($data =~ $re) {
       $match = $1;
-      $tok_type = $pattern{name};
+      $tok_type = $pattern{type};
       $ignore = $pattern{ignore};
       $chomp = $pattern{chomp};
 
@@ -95,13 +95,13 @@ sub tokenise {
 
     push @tokens, {
         'match' => $match,
-        'name'  => $tok_type,
+        'type'  => $tok_type,
     };
 
     # printf("%12s: %s\n", $tok_type, $match);
   }
 
-  my %eof = ( 'name' => 'eof' );
+  my %eof = ( 'type' => 'eof' );
   push @tokens, \%eof;
 
   return \@tokens;
@@ -115,13 +115,13 @@ sub gogo {
   for my $token__ (@tokens) {
     my %token = %$token__;
 
-    if ($token{name} eq 'comment') {
+    if ($token{type} eq 'comment') {
       push @results, $token{match} unless $token{match} =~ '#!/usr/bin/perl';
-    } elsif ($token{name} eq 'keyword') {
+    } elsif ($token{type} eq 'keyword') {
       push @results, $token{match};
-    } elsif ($token{name} eq 'string') {
+    } elsif ($token{type} eq 'string') {
       push @results, $token{match};
-    } elsif ($token{name} eq 'whitespace') {
+    } elsif ($token{type} eq 'whitespace') {
       my $newlines = $token{match};
       $newlines =~ s/ \t//g;
       push @results, $newlines;
@@ -146,7 +146,7 @@ sub translate {
 
       push @tokens, \%tok;
 
-      if (is_terminal_token_type($tok{name})) {
+      if (is_terminal_token_type($tok{type})) {
         last;
       }
     }

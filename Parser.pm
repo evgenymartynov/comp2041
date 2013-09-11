@@ -18,7 +18,7 @@ sub peek {
 sub expect {
   my $exp = shift;
   my %actual = %{shift @all_tokens};
-  my $actual = %actual ? $actual{name} : 'eof';
+  my $actual = %actual ? $actual{type} : 'eof';
 
   die("expected $exp but got $actual instead;\n ", Dumper(\%actual), "\n", Dumper(\@all_tokens))
       unless $exp eq $actual;
@@ -36,28 +36,28 @@ sub consume {
 
 sub is_expression_end {
   my @expression_terminators = qw(comma semicolon);
-  return $tok{name} ~~ @expression_terminators;
+  return $tok{type} ~~ @expression_terminators;
 }
 
 sub is_additive {
   my @additives = qw(+ -);
-  return $tok{name} eq 'operator' && $tok{match} ~~ @additives;
+  return $tok{type} eq 'operator' && $tok{match} ~~ @additives;
 }
 
 sub is_multiplicative {
   my @muliplicatives = qw(* /);
-  return $tok{name} eq 'operator' && $tok{match} ~~ @muliplicatives;
+  return $tok{type} eq 'operator' && $tok{match} ~~ @muliplicatives;
 }
 
 sub is_assignment {
   my @assignments = qw(=);
-  return $tok{name} eq 'assignment' && $tok{match} ~~ @assignments;
+  return $tok{type} eq 'assignment' && $tok{match} ~~ @assignments;
 }
 
 
 sub p_leaf {
   my %node = (
-    'name' => shift,
+    'type' => shift,
     'value' => ${shift @_}{match},
   );
 
@@ -73,7 +73,7 @@ sub p_leafget {
 sub p_template {
   my @cld = ();
   my %node = (
-    'name' => 'templ',
+    'type' => 'templ',
     'cld' => \@cld,
   );
 
@@ -85,7 +85,7 @@ sub p_template {
 sub p_apply_operator {
   my @cld = ();
   my %node = (
-    'name' => 'apply_operator',
+    'type' => 'apply_operator',
     'cld' => \@cld,
   );
 
@@ -119,7 +119,7 @@ sub p_comment {
 sub p_mul_expression {
   my @cld = ();
   my %node = (
-    'name' => 'mul_expr',
+    'type' => 'mul_expr',
     'cld' => \@cld,
   );
 
@@ -142,7 +142,7 @@ sub p_mul_expression {
 sub p_add_expression {
   my @cld = ();
   my %node = (
-    'name' => 'add_expr',
+    'type' => 'add_expr',
     'cld' => \@cld,
   );
 
@@ -165,17 +165,17 @@ sub p_add_expression {
 sub p_arithmetic_expression {
   my @cld = ();
   my %node = (
-    'name' => 'arithmetic_expr',
+    'type' => 'arithmetic_expr',
     'cld' => \@cld,
   );
 
   do {
-    if ($tok{name} eq 'number') {
+    if ($tok{type} eq 'number') {
       push @cld, p_add_expression();
     } else {
       display(\%tok);
       display(\@all_tokens);
-      die ${node}{name} . ": not sure what to do with this: ", Dumper(\%tok);
+      die ${node}{type} . ": not sure what to do with this: ", Dumper(\%tok);
     }
   } while (!is_expression_end);
 
@@ -185,19 +185,19 @@ sub p_arithmetic_expression {
 sub p_expression {
   my @cld = ();
   my %node = (
-    'name' => 'expression',
+    'type' => 'expression',
     'cld' => \@cld,
   );
 
   while (!is_expression_end) {
-    if ($tok{name} eq 'string') {
+    if ($tok{type} eq 'string') {
       push @cld, p_string();
-    } elsif ($tok{name} eq 'number') {
+    } elsif ($tok{type} eq 'number') {
       push @cld, p_arithmetic_expression();
     } else {
       display(\%tok);
       display(\@all_tokens);
-      die ${node}{name} . ": not sure what to do with this: ", Dumper(\%tok);
+      die ${node}{type} . ": not sure what to do with this: ", Dumper(\%tok);
     }
   }
 
@@ -207,16 +207,16 @@ sub p_expression {
 sub p_comma_sep_expressions {
   my @cld = ();
   my %node = (
-    'name' => 'comma_sep_expr',
+    'type' => 'comma_sep_expr',
     'cld' => \@cld,
   );
 
   while (1) {
     push @cld, p_expression();
 
-    if ($tok{name} eq 'comma') {
+    if ($tok{type} eq 'comma') {
       expect('comma');
-    } elsif ($tok{name} eq 'semicolon') {
+    } elsif ($tok{type} eq 'semicolon') {
       last;
     }
   }
@@ -227,7 +227,7 @@ sub p_comma_sep_expressions {
 sub p_print_statement {
   my @cld = ();
   my %node = (
-    'name' => 'print_expr',
+    'type' => 'print_expr',
     'cld' => \@cld,
   );
 
@@ -238,7 +238,7 @@ sub p_print_statement {
 }
 
 sub p_value {
-  if ($tok{name} eq 'scalar') {
+  if ($tok{type} eq 'scalar') {
     return p_leafget('scalar');
   } else {
     return p_expression();
@@ -260,12 +260,12 @@ sub p_assignment {
 sub p_statement {
   my $result_ref = undef;
 
-  if ($tok{name} eq 'comment') {
+  if ($tok{type} eq 'comment') {
     # No need to do anything else here
     return p_comment();
   }
 
-  if ($tok{name} eq 'keyword') {
+  if ($tok{type} eq 'keyword') {
     if ($tok{match} eq 'print') {
       $result_ref = p_print_statement();
     }
@@ -285,11 +285,11 @@ sub p_statement {
 sub p_program {
   my @cld = ();
   my %node = (
-    'name' => 'program',
+    'type' => 'program',
     'cld' => \@cld,
   );
 
-  while ($tok{name} ne 'eof') {
+  while ($tok{type} ne 'eof') {
     my $node_ref = p_statement();
     push @cld, $node_ref;
   }
