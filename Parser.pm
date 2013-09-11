@@ -2,6 +2,7 @@ package Parser;
 
 use strict;
 use Data::Dumper;
+use Switch;
 
 our (@all_tokens, %tok);
 
@@ -82,22 +83,23 @@ sub p_template {
 }
 
 
-sub p_apply_operator {
-  my @cld = ();
+sub p_node {
+  my $type = shift;
+  my @cld = @_;
   my %node = (
-    'type' => 'apply_operator',
+    'type' => $type,
     'cld' => \@cld,
   );
-
-  push @cld, shift;
-  push @cld, shift;
-  push @cld, shift;
 
   return \%node;
 }
 
 sub p_string {
   return p_leafget('string');
+}
+
+sub p_scalar {
+  return p_leafget('scalar');
 }
 
 sub p_literal_number {
@@ -116,24 +118,34 @@ sub p_comment {
   return p_leafget('comment');
 }
 
+sub p_simple_value {
+  switch ($tok{type}) {
+    case 'number'     { return p_literal_number(); }
+    case 'scalar'     { return p_scalar();         }
+
+    default           {
+      display(\%tok);
+      display(\@all_tokens);
+      die "simple_value: not sure what to do with this: ", Dumper(\%tok);
+    }
+  }
+}
+
 sub p_mul_expression {
   my @cld = ();
   my %node = (
     'type' => 'mul_expr',
+    'operator' => '*',
     'cld' => \@cld,
   );
 
-  my $left_ref = p_literal_number();
+  my $left_ref = p_simple_value();
+  push @cld, $left_ref;
 
-  while (is_multiplicative) {
-    my $op_ref = p_literal_op();
-    my $right_ref = p_literal_number();
-
-    push @cld, p_apply_operator($op_ref, $left_ref, $right_ref);
-  }
-
-  if (!@cld) {
-    push @cld, $left_ref;
+  if (is_multiplicative) {
+    my %op = %{p_literal_op()};
+    $node{operator} = ${op}{value};
+    push @cld, p_mul_expression();
   }
 
   return \%node;
@@ -143,41 +155,18 @@ sub p_add_expression {
   my @cld = ();
   my %node = (
     'type' => 'add_expr',
+    'operator' => '+',
     'cld' => \@cld,
   );
 
   my $left_ref = p_mul_expression();
+  push @cld, $left_ref;
 
-  while (is_additive) {
-    my $op_ref = p_literal_op();
-    my $right_ref = p_mul_expression();
-
-    push @cld, p_apply_operator($op_ref, $left_ref, $right_ref);
+  if (is_additive) {
+    my %op = %{p_literal_op()};
+    $node{operator} = ${op}{value};
+    push @cld, p_add_expression();
   }
-
-  if (!@cld) {
-    push @cld, $left_ref;
-  }
-
-  return \%node;
-}
-
-sub p_arithmetic_expression {
-  my @cld = ();
-  my %node = (
-    'type' => 'arithmetic_expr',
-    'cld' => \@cld,
-  );
-
-  do {
-    if ($tok{type} eq 'number') {
-      push @cld, p_add_expression();
-    } else {
-      display(\%tok);
-      display(\@all_tokens);
-      die ${node}{type} . ": not sure what to do with this: ", Dumper(\%tok);
-    }
-  } while (!is_expression_end);
 
   return \%node;
 }
@@ -189,19 +178,19 @@ sub p_expression {
     'cld' => \@cld,
   );
 
-  while (!is_expression_end) {
+#   while (!is_expression_end) {
     if ($tok{type} eq 'string') {
       push @cld, p_string();
-    } elsif ($tok{type} eq 'number') {
-      push @cld, p_arithmetic_expression();
+    } elsif ($tok{type} eq 'number' || $tok{type} eq 'scalar') {
+      push @cld, p_add_expression();
     } else {
       display(\%tok);
       display(\@all_tokens);
       die ${node}{type} . ": not sure what to do with this: ", Dumper(\%tok);
     }
-  }
+#   }
 
-  return \%node;
+  return $cld[0];
 }
 
 sub p_comma_sep_expressions {
@@ -254,7 +243,7 @@ sub p_assignment {
   my $assignment_ref = p_literal_assignment();
   my $rvalue_ref = p_assignment();
 
-  return p_apply_operator($assignment_ref, $lvalue_ref, $rvalue_ref);
+  return p_node('assign', $lvalue_ref, $rvalue_ref);
 }
 
 sub p_statement {
@@ -305,8 +294,8 @@ sub parse {
   # display(\@all_tokens);
 
   my %tree = %{p_program()};
-  display(\%tree);
-  print "## Success!\n";
+  # display(\%tree);
+  print "## Parsed!\n";
 
   return \%tree;
 }
