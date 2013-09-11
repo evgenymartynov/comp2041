@@ -49,16 +49,27 @@ sub compile_stringify {
 
 sub interpolate_string {
   my %cs = %{shift @_};
-  my $pattern = shift @_;
+  my %node = %{shift @_};
 
-  return $pattern;
+  my $quoted_string = $node{value};
+
+  my $string = substr $quoted_string, 1, -1;
+
+  my $is_raw = ($quoted_string =~ /^'/);
+  if ($is_raw) {
+    my $prefix = 'r' if $string =~ /\\/;
+    return "$prefix'$string'";
+  }
+
+  # At this point, we know we have to do it :(
+  return "'$string'";
 }
 
 sub compile_string {
   my %cs = %{shift @_};
   my %node = %{shift @_};
 
-  my $result = interpolate_string(\%cs, $node{value});
+  my $result = interpolate_string(\%cs, \%node);
   emit($result);
 }
 
@@ -73,8 +84,9 @@ sub compile_print {
   my %cs = %{shift @_};
   my %node = %{shift @_};
 
-  emit('print');
+  emit('sys.stdout.write(');
   compile_node(\%cs, @{$node{cld}}[0]);
+  emit(')');
 }
 
 sub compile_comma_sep_expr {
@@ -142,6 +154,8 @@ sub compile_program {
   my %node = %{shift @_};
 
   emit_string("#!/usr/bin/python2 -u");
+  emit_string("import sys");
+  emit_string("");
 
   my @cld = @{$node{cld}};
 
