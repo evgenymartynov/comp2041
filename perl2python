@@ -111,8 +111,13 @@ sub parse {
   Parser::parse(@_);
 }
 
+sub compile {
+  Compiler::compile(@_);
+}
+
 my @data = <>;
 my $data = join '', @data;
 
 my $token_ref = tokenise($data);
 my $tree_ref = parse($token_ref);
+compile($tree_ref);
