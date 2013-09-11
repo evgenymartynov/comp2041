@@ -47,30 +47,13 @@ sub compile_stringify {
   emit(")");
 }
 
-sub interpolate_string {
-  my %cs = %{shift @_};
-  my %node = %{shift @_};
-
-  my $quoted_string = $node{value};
-
-  my $string = substr $quoted_string, 1, -1;
-
-  my $is_raw = ($quoted_string =~ /^'/);
-  if ($is_raw) {
-    my $prefix = 'r' if $string =~ /\\/;
-    return "$prefix'$string'";
-  }
-
-  # At this point, we know we have to do it :(
-  return "'$string'";
-}
-
 sub compile_string {
   my %cs = %{shift @_};
   my %node = %{shift @_};
 
-  my $result = interpolate_string(\%cs, \%node);
-  emit($result);
+  my $prefix = ($node{raw_string} ? 'r' : '');
+
+  emit("$prefix'$node{value}'");
 }
 
 sub compile_scalar {

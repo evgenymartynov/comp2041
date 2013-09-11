@@ -94,8 +94,61 @@ sub p_node {
   return \%node;
 }
 
+sub p_node_with_value {
+  my $type = shift;
+  my $value = shift;
+  my @cld = ();
+
+  my %node = (
+    'type' => $type,
+    'cld' => \@cld,
+    'value' => $value,
+  );
+
+  return \%node;
+}
+
+# Does not operate on the global %tok.
+sub interpolate_string {
+  my @cld = ();
+  my %node = (
+    'type' => 'comma_sep_string_concat',  # Kind of cheating, but eh.
+    'cld' => \@cld,
+  );
+
+  my %tok = %{shift @_};
+  my $quoted_string = $tok{match};
+  my $string = substr $quoted_string, 1, -1;
+
+  my $is_raw = ($quoted_string =~ /^'/);
+  if ($is_raw) {
+    $node{type} = 'string';
+    $node{value} = $string;
+    $node{raw_string} = 1;
+    return \%node;
+  }
+
+  # At this point, we know we have to do it :(
+
+  # Pull out things like /$(?!\d)\w+/
+  my $id_regex = qr((\$(?!\d)\w+)); # Capture group makes split return seps too
+  my @fragments = split $id_regex, $string;
+
+  while (@fragments) {
+    my $text = shift @fragments;
+    my $var  = shift @fragments;
+
+    push @cld, p_node_with_value('string', $text) if $text;
+    push @cld, p_stringify(p_node_with_value('scalar', $var)) if defined($var);
+  }
+
+  return \%node;
+}
+
 sub p_string {
-  return p_leafget('string');
+  my %tok = %{expect('string')};
+  interpolate_string(\%tok);
+  return \%tok;
 }
 
 sub p_scalar {
@@ -229,7 +282,7 @@ sub p_comma_separated_string_concatenation {
     if ($type ne 'string') {
       push @cld, p_stringify($node_ref);
     } else {
-      push @cld, $node_ref;
+      push @cld, interpolate_string($node_ref);
     }
   }
 
