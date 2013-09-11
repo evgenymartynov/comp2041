@@ -222,61 +222,49 @@ sub p_simple_value {
 }
 
 sub p_mul_expression {
-  my @cld = ();
-  my %node = (
-    'type' => 'mul_expr',
-    'operator' => '*',
-    'cld' => \@cld,
-  );
-
   my $left_ref = p_simple_value();
-  push @cld, $left_ref;
 
-  if (is_multiplicative) {
-    my %op = %{p_literal_op()};
-    $node{operator} = ${op}{value};
-    push @cld, p_mul_expression();
+  if (!is_multiplicative) {
+    return $left_ref;
   }
+
+  my %op = %{p_literal_op()};
+  my $right_ref = p_mul_expression();
+
+  my %node = %{p_node('mul_expr', $left_ref, $right_ref)};
+  $node{operator} = ${op}{value};
 
   return \%node;
 }
 
 sub p_add_expression {
-  my @cld = ();
-  my %node = (
-    'type' => 'add_expr',
-    'operator' => '+',
-    'cld' => \@cld,
-  );
-
   my $left_ref = p_mul_expression();
-  push @cld, $left_ref;
 
-  if (is_additive) {
-    my %op = %{p_literal_op()};
-    $node{operator} = ${op}{value};
-    push @cld, p_add_expression();
+  if (!is_additive) {
+    return $left_ref;
   }
+
+  my %op = %{p_literal_op()};
+  my $right_ref = p_add_expression();
+
+  my %node = %{p_node('add_expr', $left_ref, $right_ref)};
+  $node{operator} = ${op}{value};
 
   return \%node;
 }
 
 sub p_comparison_expression {
-  my @cld = ();
-  my %node = (
-    'type' => 'comparison',
-    'operator' => '???',
-    'cld' => \@cld,
-  );
-
   my $left_ref = p_add_expression();
-  push @cld, $left_ref;
 
-  if ($tok{type} eq 'comparison') {
-    my %op = %{p_literal_comparison()};
-    $node{operator} = ${op}{value};
-    push @cld, p_add_expression();
+  if ($tok{type} ne 'comparison') {
+    return $left_ref;
   }
+
+  my %op = %{p_literal_comparison()};
+  my $right_ref = p_mul_expression();
+
+  my %node = %{p_node('comparison', $left_ref, $right_ref)};
+  $node{operator} = ${op}{value};
 
   return \%node;
 }
