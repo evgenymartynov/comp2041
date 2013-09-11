@@ -6,3 +6,4 @@ date:start:end:description
 11/09:1100:1215:Add add/mul operator precedence
 11/09:1300:1355:Add assignments & variables
 11/09:2000:2040:Reflected on life. Compilers suck. Especially when the very first compiler you ever write is the one that translates from perl into python. From *perl*. Of all things, it has to be the worst language. Ever.
+11/09:2040:2240:Wrote the code generator. Want to do AOS instead of this.
