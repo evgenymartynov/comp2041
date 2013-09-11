@@ -3,3 +3,4 @@ date:start:end:description
 10/09:2115:2315:Wrote AST capable of parsing strings, comments, and prints
 10/09:2315:1355:Recognise arithmetic
 11/09:0000:0002:Add arithmetic expression parsing
+11/09:1100:1215:Add add/mul operator precedence

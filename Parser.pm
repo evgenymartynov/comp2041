@@ -39,6 +39,16 @@ sub is_expression_end {
   return $tok{name} ~~ @expression_terminators;
 }
 
+sub is_additive {
+  my @additives = qw(+ -);
+  return $tok{name} eq 'operator' && $tok{match} ~~ @additives;
+}
+
+sub is_multiplicative {
+  my @muliplicatives = qw(* /);
+  return $tok{name} eq 'operator' && $tok{match} ~~ @muliplicatives;
+}
+
 
 sub p_leaf {
   my %node = (
@@ -67,6 +77,20 @@ sub p_template {
 }
 
 
+sub p_apply_operator {
+  my @cld = ();
+  my %node = (
+    'name' => 'apply_operator',
+    'cld' => \@cld,
+  );
+
+  push @cld, shift;
+  push @cld, shift;
+  push @cld, shift;
+
+  return \%node;
+}
+
 sub p_string {
   return p_leafget('string');
 }
@@ -79,6 +103,52 @@ sub p_literal_op {
   return p_leafget('operator');
 }
 
+sub p_mul_expression {
+  my @cld = ();
+  my %node = (
+    'name' => 'mul_expr',
+    'cld' => \@cld,
+  );
+
+  my $left_ref = p_literal_number();
+
+  while (is_multiplicative) {
+    my $op_ref = p_literal_op();
+    my $right_ref = p_literal_number();
+
+    push @cld, p_apply_operator($op_ref, $left_ref, $right_ref);
+  }
+
+  if (!@cld) {
+    push @cld, $left_ref;
+  }
+
+  return \%node;
+}
+
+sub p_add_expression {
+  my @cld = ();
+  my %node = (
+    'name' => 'add_expr',
+    'cld' => \@cld,
+  );
+
+  my $left_ref = p_mul_expression();
+
+  while (is_additive) {
+    my $op_ref = p_literal_op();
+    my $right_ref = p_mul_expression();
+
+    push @cld, p_apply_operator($op_ref, $left_ref, $right_ref);
+  }
+
+  if (!@cld) {
+    push @cld, $left_ref;
+  }
+
+  return \%node;
+}
+
 sub p_arithmetic_expression {
   my @cld = ();
   my %node = (
@@ -86,19 +156,15 @@ sub p_arithmetic_expression {
     'cld' => \@cld,
   );
 
-  push @cld, expect('number');
-
-  while (!is_expression_end) {
+  do {
     if ($tok{name} eq 'number') {
-      push @cld, p_literal_number();
-    } elsif ($tok{name} eq 'operator') {
-      push @cld, p_literal_op();
+      push @cld, p_add_expression();
     } else {
       display(\%tok);
       display(\@all_tokens);
       die "p_arithmetic_expression: not sure what to do with this: ", Dumper(\%tok);
     }
-  }
+  } while (!is_expression_end);
 
   return \%node;
 }
@@ -137,7 +203,7 @@ sub p_comma_sep_expressions {
 
     if ($tok{name} eq 'comma') {
       expect('comma');
-    } else {
+    } elsif ($tok{name} eq 'semicolon') {
       last;
     }
   }
