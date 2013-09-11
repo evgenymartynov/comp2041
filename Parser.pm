@@ -211,6 +211,31 @@ sub p_comma_sep_expressions {
   return \%node;
 }
 
+sub p_stringify {
+  return p_node('stringify', shift);
+}
+
+sub p_comma_separated_string_concatenation {
+  my @cld = ();
+  my %node = (
+    'type' => 'comma_sep_string_concat',
+    'cld' => \@cld,
+  );
+
+  my $statements = ${p_comma_sep_expressions()}{cld};
+
+  while (my $node_ref = shift @{$statements}) {
+    my $type = ${$node_ref}{type};
+    if ($type ne 'string') {
+      push @cld, p_stringify($node_ref);
+    } else {
+      push @cld, $node_ref;
+    }
+  }
+
+  return \%node;
+}
+
 sub p_print_statement {
   my @cld = ();
   my %node = (
@@ -219,7 +244,7 @@ sub p_print_statement {
   );
 
   expect('keyword');
-  push @cld, p_comma_sep_expressions();
+  push @cld, p_comma_separated_string_concatenation();
 
   return \%node;
 }

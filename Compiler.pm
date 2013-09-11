@@ -38,11 +38,28 @@ sub compile_number {
   emit($node{value});
 }
 
+sub compile_stringify {
+  my %cs = %{shift @_};
+  my %node = %{shift @_};
+
+  emit("str(");
+  compile_node(\%cs, ${$node{cld}}[0]);
+  emit(")");
+}
+
+sub interpolate_string {
+  my %cs = %{shift @_};
+  my $pattern = shift @_;
+
+  return $pattern;
+}
+
 sub compile_string {
   my %cs = %{shift @_};
   my %node = %{shift @_};
 
-  emit($node{value});
+  my $result = interpolate_string(\%cs, $node{value});
+  emit($result);
 }
 
 sub compile_scalar {
@@ -70,6 +87,23 @@ sub compile_comma_sep_expr {
     $first = 0;
 
     compile_node(\%cs, $node_ref);
+  }
+}
+
+sub compile_comma_sep_string_concat {
+  my %cs = %{shift @_};
+  my %node = %{shift @_};
+
+  # Listception. Hashception. Everythingception.
+  # ...contraception?
+  my @cld = @{$node{cld}};
+  my $first = 1;
+
+  foreach my $child (@cld) {
+    emit("+") unless $first;
+    $first = 0;
+
+    compile_node(\%cs, $child);
   }
 }
 
@@ -148,6 +182,10 @@ sub compile_node {
     case 'comma_sep_expr'   { compile_comma_sep_expr  (\%cs, \%node); }
 
     case 'print_expr'       { compile_print           (\%cs, \%node); }
+
+    # I hate perl at times. More so than the other times when I want to kill it.
+    case 'comma_sep_string_concat' { compile_comma_sep_string_concat(\%cs, \%node); }
+    case 'stringify'        { compile_stringify       (\%cs, \%node); }
 
     default           {
       print "What are you doing? Got this: ";
