@@ -49,6 +49,11 @@ sub is_multiplicative {
   return $tok{name} eq 'operator' && $tok{match} ~~ @muliplicatives;
 }
 
+sub is_assignment {
+  my @assignments = qw(=);
+  return $tok{name} eq 'assignment' && $tok{match} ~~ @assignments;
+}
+
 
 sub p_leaf {
   my %node = (
@@ -97,6 +102,10 @@ sub p_string {
 
 sub p_literal_number {
   return p_leafget('number');
+}
+
+sub p_literal_assignment {
+  return p_leafget('assignment');
 }
 
 sub p_literal_op {
@@ -224,27 +233,51 @@ sub p_print_statement {
 
   expect('keyword');
   push @cld, p_comma_sep_expressions();
-  expect('semicolon');
 
   return \%node;
 }
 
+sub p_value {
+  if ($tok{name} eq 'scalar') {
+    return p_leafget('scalar');
+  } else {
+    return p_expression();
+  }
+}
+
+sub p_assignment {
+  my $lvalue_ref = p_value();
+  if (!is_assignment) {
+    return $lvalue_ref;
+  }
+
+  my $assignment_ref = p_literal_assignment();
+  my $rvalue_ref = p_assignment();
+
+  return p_apply_operator($assignment_ref, $lvalue_ref, $rvalue_ref);
+}
+
 sub p_statement {
-  my @cld = ();
-  my %node = (
-    'name' => 'statement',
-    'cld' => \@cld,
-  );
+  my $result_ref = undef;
 
   if ($tok{name} eq 'keyword') {
     if ($tok{match} eq 'print') {
-      return p_print_statement();
+      $result_ref = p_print_statement();
     }
   } elsif ($tok{name} eq 'comment') {
+    # No need to do anything else here
     return p_comment();
+  } else {
+    $result_ref = p_assignment();
   }
 
-  die ${node}{name} . ": not sure what to do with this: ", Dumper(\%tok);
+  expect('semicolon');
+
+  if (defined($result_ref)) {
+    return $result_ref;
+  }
+
+  die "statement: not sure what to do with this: ", Dumper(\%tok);
 }
 
 sub p_program {

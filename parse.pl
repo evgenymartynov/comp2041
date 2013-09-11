@@ -7,6 +7,8 @@ require Parser;
 
 my $pat_space = " \t\n";
 my $pat_special = ",;'\"{}()";
+my $pat_variable_first = 'A-Za-z_';
+my $pat_variable = "${pat_variable_first}0-9";
 my $pat_kw = join '|', qw(print shift undef);
 
 my @patterns = (
@@ -26,6 +28,9 @@ my @patterns = (
 
   { 'name' => 'number',     're' => '-?[1-9][0-9]*' },
   { 'name' => 'operator',   're' => '[+-/*]' },
+  { 'name' => 'scalar',     're' => "\\\$[$pat_variable_first][$pat_variable]*" },
+
+  { 'name' => 'assignment', 're' => '=' },
 
   { 'name' => 'whitespace', 're' => qr([$pat_space]+) , 'ignore' => 1 },
   { 'name' => 'word',       're' => qr([^$pat_space$pat_special]+) },

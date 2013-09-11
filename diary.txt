@@ -4,3 +4,4 @@ date:start:end:description
 10/09:2315:1355:Recognise arithmetic
 11/09:0000:0002:Add arithmetic expression parsing
 11/09:1100:1215:Add add/mul operator precedence
+11/09:1300:1355:Add assignments & variables
