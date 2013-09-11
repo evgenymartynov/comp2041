@@ -80,6 +80,12 @@ sub is_assignment {
   return $tok{type} eq 'assignment' && $tok{match} ~~ @assignments;
 }
 
+sub is_string_type {
+  my $type = shift;
+  my @string_types = qw(comma_sep_string_concat string);
+  return $type ~~ @string_types;
+}
+
 
 sub p_leaf {
   my %node = (
@@ -147,9 +153,11 @@ sub interpolate_string {
 
   my $is_raw = ($quoted_string =~ /^'/);
   if ($is_raw) {
-    $node{type} = 'string';
-    $node{value} = $string;
-    $node{raw_string} = 1;
+    my %raw_node = %{p_node_with_value('string', $string)};
+    $raw_node{raw_string} = 1;
+
+    push @cld, \%raw_node;
+
     return \%node;
   }
 
@@ -303,10 +311,14 @@ sub p_comma_separated_string_concatenation {
 
   while (my $node_ref = shift @{$statements}) {
     my $type = ${$node_ref}{type};
-    if ($type ne 'string') {
+
+    if (!is_string_type($type)) {
       push @cld, p_stringify($node_ref);
-    } else {
+    } elsif ($type eq 'string') {
       push @cld, interpolate_string($node_ref);
+    } else {
+      die 'u wot mate' unless is_string_type($type);
+      push @cld, $node_ref;
     }
   }
 
