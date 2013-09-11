@@ -147,8 +147,7 @@ sub interpolate_string {
 
 sub p_string {
   my %tok = %{expect('string')};
-  interpolate_string(\%tok);
-  return \%tok;
+  return interpolate_string(\%tok);
 }
 
 sub p_scalar {
