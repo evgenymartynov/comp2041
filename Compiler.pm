@@ -52,8 +52,10 @@ sub compile_string {
   my %node = %{shift @_};
 
   my $prefix = ($node{raw_string} ? 'r' : '');
+  my $escaped = $node{value};
+  $escaped =~ s/'/\\'/g;
 
-  emit("$prefix'$node{value}'");
+  emit("$prefix'$escaped'");
 }
 
 sub compile_scalar {
