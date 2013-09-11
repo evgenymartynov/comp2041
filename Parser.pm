@@ -103,6 +103,10 @@ sub p_literal_op {
   return p_leafget('operator');
 }
 
+sub p_comment {
+  return p_leafget('comment');
+}
+
 sub p_mul_expression {
   my @cld = ();
   my %node = (
@@ -223,10 +227,6 @@ sub p_print_statement {
   expect('semicolon');
 
   return \%node;
-}
-
-sub p_comment {
-  return p_leafget('comment');
 }
 
 sub p_statement {
