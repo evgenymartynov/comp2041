@@ -106,11 +106,10 @@ sub compile_assign {
   my %cs = %{shift @_};
   my %node = %{shift @_};
 
-  my %lvalue_node = %{${$node{cld}}[0]};
+  my $lvalue_node_ref = ${$node{cld}}[0];
   my $rvalue_node_ref = ${$node{cld}}[1];
 
-  my $lvalue = lookup_variable($lvalue_node{value});
-  emit($lvalue);
+  compile_node(\%cs, $lvalue_node_ref);
   emit('=');
   compile_node(\%cs, $rvalue_node_ref);
 }

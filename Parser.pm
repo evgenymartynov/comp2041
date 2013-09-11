@@ -311,7 +311,7 @@ sub p_value {
 }
 
 sub p_assignment {
-  my $lvalue_ref = p_value();
+  my $lvalue_ref = p_expression();
   if (!is_assignment) {
     return $lvalue_ref;
   }
