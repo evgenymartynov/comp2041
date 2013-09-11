@@ -34,6 +34,27 @@ sub consume {
 }
 
 
+sub is_expression_end {
+  my @expression_terminators = qw(comma semicolon);
+  return $tok{name} ~~ @expression_terminators;
+}
+
+
+sub p_leaf {
+  my %node = (
+    'name' => shift,
+    'value' => ${shift @_}{match},
+  );
+
+  return \%node;
+}
+
+sub p_leafget {
+  my $type = shift;
+  return p_leaf($type, expect($type));
+}
+
+
 sub p_template {
   my @cld = ();
   my %node = (
@@ -47,39 +68,15 @@ sub p_template {
 
 
 sub p_string {
-  my @cld = ();
-  my %node = (
-    'name' => 'string',
-    'cld' => \@cld,
-  );
-
-  push @cld, expect('string');
-
-  return \%node;
+  return p_leafget('string');
 }
 
 sub p_literal_number {
-  my @cld = ();
-  my %node = (
-    'name' => 'literal_number',
-    'cld' => \@cld,
-  );
-
-  push @cld, expect('number');
-
-  return \%node;
+  return p_leafget('number');
 }
 
 sub p_literal_op {
-  my @cld = ();
-  my %node = (
-    'name' => 'literal_op',
-    'cld' => \@cld,
-  );
-
-  push @cld, expect('operator');
-
-  return \%node;
+  return p_leafget('operator');
 }
 
 sub p_arithmetic_expression {
@@ -91,12 +88,7 @@ sub p_arithmetic_expression {
 
   push @cld, expect('number');
 
-  my $tok_stop = sub {
-    my @stops = qw(comma semicolon);
-    return $tok{name} ~~ @stops;
-  };
-
-  while ( !$tok_stop->() ) {
+  while (!is_expression_end) {
     if ($tok{name} eq 'number') {
       push @cld, p_literal_number();
     } elsif ($tok{name} eq 'operator') {
@@ -118,12 +110,7 @@ sub p_expression {
     'cld' => \@cld,
   );
 
-  my $tok_stop = sub {
-    my @stops = qw(comma semicolon);
-    return $tok{name} ~~ @stops;
-  };
-
-  while ( !$tok_stop->() ) {
+  while (!is_expression_end) {
     if ($tok{name} eq 'string') {
       push @cld, p_string();
     } elsif ($tok{name} eq 'number') {
@@ -173,15 +160,7 @@ sub p_print_statement {
 }
 
 sub p_comment {
-  my @cld = ();
-  my %node = (
-    'name' => 'comment',
-    'cld' => \@cld,
-  );
-
-  push @cld, expect('comment');
-
-  return \%node;
+  return p_leafget('comment');
 }
 
 sub p_statement {
