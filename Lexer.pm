@@ -6,7 +6,7 @@ my $pat_special = ",;'\"{}()";
 my $pat_variable_first = 'A-Za-z_';
 my $pat_variable = "${pat_variable_first}0-9";
 my $pat_kw = join '|', qw(print printf shift undef);
-my $pat_comparisons = join '|', qw(< > <= >= == !=);
+my $pat_comparisons = join '|', qw(<= >= == != < >);
 
 my @patterns = (
   { 'type' => 'comment',    're' => qr(#.*\n), 'chomp' => 1 },
