@@ -260,13 +260,15 @@ sub p_assignment {
 sub p_statement {
   my $result_ref = undef;
 
+  if ($tok{name} eq 'comment') {
+    # No need to do anything else here
+    return p_comment();
+  }
+
   if ($tok{name} eq 'keyword') {
     if ($tok{match} eq 'print') {
       $result_ref = p_print_statement();
     }
-  } elsif ($tok{name} eq 'comment') {
-    # No need to do anything else here
-    return p_comment();
   } else {
     $result_ref = p_assignment();
   }
