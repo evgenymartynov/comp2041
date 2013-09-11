@@ -116,6 +116,17 @@ sub compile_assign {
   compile_node(\%cs, $rvalue_node_ref);
 }
 
+sub compile_parenthesise {
+  my %cs = %{shift @_};
+  my %node = %{shift @_};
+
+  emit('(');
+  for my $node_ref (@{$node{cld}}) {
+    compile_node(\%cs, $node_ref);
+  }
+  emit(')');
+}
+
 sub compile_binary_op_expr {
   my %cs = %{shift @_};
   my %node = %{shift @_};
@@ -180,6 +191,8 @@ sub compile_node {
     case 'comma_sep_expr'   { compile_comma_sep_expr  (\%cs, \%node); }
 
     case 'print_expr'       { compile_print           (\%cs, \%node); }
+
+    case 'parenthesise'     { compile_parenthesise    (\%cs, \%node); }
 
     # I hate perl at times. More so than the other times when I want to kill it.
     case 'comma_sep_string_concat' { compile_comma_sep_string_concat(\%cs, \%node); }

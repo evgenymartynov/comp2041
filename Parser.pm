@@ -34,6 +34,31 @@ sub consume {
   return $popped;
 }
 
+sub pinternal_parenthesise {
+  return p_node('parenthesise', @_);
+}
+
+sub pinternal_printfmt {
+  my $fmt_ref = shift;
+  my $variadic_ref = shift;
+
+  my @modulo_args = ($fmt_ref, pinternal_parenthesise($variadic_ref));
+
+  my %modulo = (
+    'operator' => '%',
+    'type'     => 'mul_expr',
+    'cld'      => \@modulo_args,
+  );
+
+  my @perl_sucks = ( \%modulo );
+
+  my %print_invocation = (
+    'type' => 'print_expr',
+    'cld'  => \@perl_sucks,
+  );
+
+  return \%print_invocation;
+}
 
 sub is_expression_end {
   my @expression_terminators = qw(comma semicolon);
@@ -301,6 +326,15 @@ sub p_print_statement {
   return \%node;
 }
 
+sub p_printfmt_statement {
+  expect('keyword');
+  my $fmt_ref = p_expression();
+  expect('comma');
+  my $variadic_ref = p_comma_sep_expressions();
+
+  return pinternal_printfmt($fmt_ref, $variadic_ref);
+}
+
 sub p_value {
   if ($tok{type} eq 'scalar') {
     return p_leafget('scalar');
@@ -330,8 +364,18 @@ sub p_statement {
   }
 
   if ($tok{type} eq 'keyword') {
-    if ($tok{match} eq 'print') {
-      $result_ref = p_print_statement();
+    switch ($tok{match}) {
+      case 'print'    {
+        $result_ref = p_print_statement();
+      }
+
+      case 'printf'   {
+        $result_ref = p_printfmt_statement();
+      }
+
+      default         {
+        die "Forgot to catch a keyword :(";
+      }
     }
   } else {
     $result_ref = p_assignment();
