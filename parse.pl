@@ -107,54 +107,6 @@ sub tokenise {
   return \@tokens;
 }
 
-sub gogo {
-  my $tokens__ = shift;
-  my @tokens = @$tokens__;
-  my @results = ();
-
-  for my $token__ (@tokens) {
-    my %token = %$token__;
-
-    if ($token{type} eq 'comment') {
-      push @results, $token{match} unless $token{match} =~ '#!/usr/bin/perl';
-    } elsif ($token{type} eq 'keyword') {
-      push @results, $token{match};
-    } elsif ($token{type} eq 'string') {
-      push @results, $token{match};
-    } elsif ($token{type} eq 'whitespace') {
-      my $newlines = $token{match};
-      $newlines =~ s/ \t//g;
-      push @results, $newlines;
-    }
-  }
-
-  print (join '', @results);
-}
-
-sub translate {
-  my $all_tokens__ = shift;
-  my @all_tokens = @$all_tokens__;
-
-  print "#!/usr/bin/python2.7 -u\n";
-
-  while (@all_tokens) {
-    my @tokens = ();
-
-    while (@all_tokens) {
-      my $tok__ = shift @all_tokens;
-      my %tok = %$tok__;
-
-      push @tokens, \%tok;
-
-      if (is_terminal_token_type($tok{type})) {
-        last;
-      }
-    }
-
-    gogo(\@tokens);
-  }
-}
-
 sub parse {
   Parser::parse(@_);
 }
