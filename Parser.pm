@@ -178,17 +178,15 @@ sub p_expression {
     'cld' => \@cld,
   );
 
-#   while (!is_expression_end) {
-    if ($tok{type} eq 'string') {
-      push @cld, p_string();
-    } elsif ($tok{type} eq 'number' || $tok{type} eq 'scalar') {
-      push @cld, p_add_expression();
-    } else {
-      display(\%tok);
-      display(\@all_tokens);
-      die ${node}{type} . ": not sure what to do with this: ", Dumper(\%tok);
-    }
-#   }
+  if ($tok{type} eq 'string') {
+    push @cld, p_string();
+  } elsif ($tok{type} eq 'number' || $tok{type} eq 'scalar') {
+    push @cld, p_add_expression();
+  } else {
+    display(\%tok);
+    display(\@all_tokens);
+    die ${node}{type} . ": not sure what to do with this: ", Dumper(\%tok);
+  }
 
   return $cld[0];
 }
