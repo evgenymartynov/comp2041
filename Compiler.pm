@@ -39,10 +39,6 @@ sub emit_keyword {
   print shift, " ";
 }
 
-sub emit {
-  print shift @_, " ";
-}
-
 sub lookup_variable {
   my $var = shift;
   $var =~ s/^\$//;
@@ -101,7 +97,7 @@ sub compile_string {
   my $escaped = $node{value};
   $escaped =~ s/'/\\'/g;
 
-  emit("$prefix'$escaped'");
+  emit_identifier("$prefix'$escaped'");
 }
 
 sub compile_scalar {
