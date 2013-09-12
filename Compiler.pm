@@ -16,6 +16,10 @@ sub emit_internal_string {
   print shift;
 }
 
+sub emit_identifier {
+  emit_internal_string(shift . " ");
+}
+
 sub emit_node_value {
   my %node = %{shift @_};
 
@@ -69,7 +73,7 @@ sub compile_function_call {
   my $funcname = shift @_;
   my @args = @_;
 
-  emit($funcname);
+  emit_identifier($funcname);
   emit_token("(");
   compile_comma_sep_expr_onlist(@args);
   emit_token(")");
@@ -103,7 +107,7 @@ sub compile_string {
 sub compile_scalar {
   my %node = %{shift @_};
 
-  emit(lookup_variable($node{value}));
+  emit_identifier(lookup_variable($node{value}));
 }
 
 sub compile_print {
