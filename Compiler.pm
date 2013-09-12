@@ -4,7 +4,7 @@ use strict;
 use Data::Dumper;
 use Switch;
 
-our %cs;
+our (%cs, %emitter_state, %emitter_stack);
 
 sub display {
   local $Data::Dumper::Terse = 1;
@@ -19,10 +19,21 @@ sub display {
 sub emit_internal_string {
   my $string = shift;
   die "Trying to emit undefined string :(" unless defined($string);
-  print $string . " ";
+
+  if (!$emitter_state{suppress_space_once} || $emitter_state{suppress_space_override}) {
+    $string = " $string";
+  }
+
+  $emitter_state{suppress_space_once} = 0;
+  $emitter_state{suppress_space_override} = 0;
+
+  print $string;
 }
 
 sub emit_statement_begin {
+  $emitter_state{suppress_space_once} = 1;
+  $emitter_state{suppress_space_override} = 0;
+
   print "\n" . ('  ' x $cs{depth});
 }
 
@@ -35,11 +46,22 @@ sub emit_identifier {
 }
 
 sub emit_token {
-  emit_internal_string(shift);
+  my $token = shift;
+
+  my $no_space_before = '():,';
+  my $no_space_after =  '(:';
+  my $always_space_after = '-+*/%';
+
+  $emitter_state{suppress_space_once} = 1     if ($token =~ qr([$no_space_before]));
+  emit_internal_string($token);
+  $emitter_state{suppress_space_once} = 1     if ($token =~ qr([$no_space_after]));
+  $emitter_state{suppress_space_override} = 1 if ($token =~ qr([$always_space_after]));
 }
 
 sub emit_keyword {
   emit_internal_string(shift);
+
+  $emitter_state{suppress_space_override} = 1;
 }
 
 sub emit_node_value {
@@ -306,6 +328,12 @@ sub compile {
   %cs = (
     'depth' => 0,
   );
+
+  %emitter_state = (
+    'suppress_space_once' => 1,
+  );
+
+  %emitter_stack = ();
 
   compile_node($ast_ref);
   print "## Compiled!\n";
