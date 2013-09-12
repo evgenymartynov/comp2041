@@ -310,7 +310,7 @@ sub p_expression {
       my $expression_ref = p_expression();
       expect('parenend');
 
-      push @cld, p_parenthesise($expression_ref);
+      push @cld, $expression_ref;
     }
 
     default {
