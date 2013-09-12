@@ -12,32 +12,46 @@ sub display {
   print;
 }
 
+#
+# Emitters
+#
+
 sub emit_internal_string {
-  print shift;
-}
-
-sub emit_identifier {
-  emit_internal_string(shift . " ");
-}
-
-sub emit_node_value {
-  my %node = %{shift @_};
-
-  die("Expecting value inside node ", display(\%node)) unless defined($node{value});
-  emit_internal_string($node{value} . " ");
+  my $string = shift;
+  die "Trying to emit undefined string :(" unless defined($string);
+  print $string . " ";
 }
 
 sub emit_statement_begin {
   print "\n" . ('  ' x $cs{depth});
 }
 
+sub emit_constant {
+  emit_internal_string(shift);
+}
+
+sub emit_identifier {
+  emit_internal_string(shift);
+}
+
 sub emit_token {
-  print shift, " ";
+  emit_internal_string(shift);
 }
 
 sub emit_keyword {
-  print shift, " ";
+  emit_internal_string(shift);
 }
+
+sub emit_node_value {
+  my %node = %{shift @_};
+
+  die("Expecting value inside node ", display(\%node)) unless defined($node{value});
+  emit_internal_string($node{value});
+}
+
+#
+# Compiler
+#
 
 sub lookup_variable {
   my $var = shift;
