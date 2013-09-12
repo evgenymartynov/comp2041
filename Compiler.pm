@@ -20,11 +20,15 @@ sub emit_node_value {
   my %node = %{shift @_};
 
   die("Expecting value inside node ", display(\%node)) unless defined($node{value});
-  emit_internal_string($node{value});
+  emit_internal_string($node{value} . " ");
 }
 
 sub emit_statement_begin {
   print "\n" . ('  ' x $cs{depth});
+}
+
+sub emit_token {
+  print shift, " ";
 }
 
 sub emit {
@@ -50,7 +54,7 @@ sub compile_comma_sep_expr_onlist {
 
   my $first = 1;
   for my $node_ref (@cld) {
-    emit(",") unless $first;
+    emit_token(",") unless $first;
     $first = 0;
 
     compile_node($node_ref);
@@ -62,9 +66,9 @@ sub compile_function_call {
   my @args = @_;
 
   emit($funcname);
-  emit("(");
+  emit_token("(");
   compile_comma_sep_expr_onlist(@args);
-  emit(")");
+  emit_token(")");
 }
 
 sub compile_range {
@@ -79,9 +83,7 @@ sub compile_range {
 sub compile_stringify {
   my %node = %{shift @_};
 
-  emit("str(");
-  compile_node(${$node{cld}}[0]);
-  emit(")");
+  compile_function_call('str', ${$node{cld}}[0]);
 }
 
 sub compile_string {
@@ -103,9 +105,7 @@ sub compile_scalar {
 sub compile_print {
   my %node = %{shift @_};
 
-  emit('sys.stdout.write(');
-  compile_node(@{$node{cld}}[0]);
-  emit(')');
+  compile_function_call('sys.stdout.write', @{$node{cld}}[0]);
 }
 
 sub compile_comma_sep_expr {
@@ -123,7 +123,7 @@ sub compile_comma_sep_string_concat {
   my $first = 1;
 
   foreach my $child (@cld) {
-    emit("+") unless $first;
+    emit_token("+") unless $first;
     $first = 0;
 
     compile_node($child);
@@ -137,18 +137,18 @@ sub compile_assign {
   my $rvalue_node_ref = ${$node{cld}}[1];
 
   compile_node($lvalue_node_ref);
-  emit('=');
+  emit_token('=');
   compile_node($rvalue_node_ref);
 }
 
 sub compile_parenthesise {
   my %node = %{shift @_};
 
-  emit('(');
+  emit_token('(');
   for my $node_ref (@{$node{cld}}) {
     compile_node($node_ref);
   }
-  emit(')');
+  emit_token(')');
 }
 
 sub compile_binary_op_expr {
@@ -160,7 +160,7 @@ sub compile_binary_op_expr {
   compile_node($lop_ref);
 
   while (defined($rop_ref)) {
-    emit($node{operator});
+    emit_token($node{operator});
     compile_node($rop_ref);
 
     $rop_ref = shift @{$node{cld}};
@@ -210,7 +210,7 @@ sub compile_body {
 
   $cs{depth}++;
 
-  emit(':');
+  emit_token(':');
   emit_statement_begin();
 
   for my $node_ref (@{$node{cld}}) {
