@@ -31,6 +31,10 @@ sub emit_token {
   print shift, " ";
 }
 
+sub emit_keyword {
+  print shift, " ";
+}
+
 sub emit {
   print shift @_, " ";
 }
@@ -174,7 +178,7 @@ sub compile_if {
   my $true_ref = shift @{$node{cld}};
   my $false_ref = shift @{$node{cld}};
 
-  emit('if');
+  emit_keyword('if');
   compile_node($cond_ref);
   compile_node($true_ref);
   compile_node($false_ref) if defined($false_ref);
@@ -186,7 +190,7 @@ sub compile_while {
   my $cond_ref = shift @{$node{cld}};
   my $body_ref = shift @{$node{cld}};
 
-  emit('while');
+  emit_keyword('while');
   compile_node($cond_ref);
   compile_node($body_ref);
 }
@@ -198,9 +202,9 @@ sub compile_foreach {
   my $range_ref = shift @{$node{cld}};
   my $body_ref = shift @{$node{cld}};
 
-  emit('for');
+  emit_keyword('for');
   compile_node($iterator_ref);
-  emit('in');
+  emit_keyword('in');
   compile_node($range_ref);
   compile_node($body_ref);
 }
