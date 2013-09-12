@@ -130,26 +130,39 @@ sub compile_stringify {
 sub massage_string_concat_under_print_context {
   my $current_node_ref = shift;   # Need the ref to strip newlines
   my %current_node = %{$current_node_ref};
-  my @cld = @{$current_node{cld}};
+  my $cld_ref = $current_node{cld};
 
   my $eol_please = 0;
+  my $kill_me_please = 0;
 
   given ($current_node{type}) {
     when ('comma_sep_string_concat') {
-      my $rightmost_ref = $cld[$#cld];
-      return massage_string_concat_under_print_context($rightmost_ref);
+      my $rightmost_ref = ${$cld_ref}[$#{$cld_ref}];
+      ($eol_please, $kill_me_please) =
+          massage_string_concat_under_print_context($rightmost_ref);
+
+      # Don't want empty strings hanging around.
+      if ($kill_me_please) {
+        pop ${$current_node_ref}{cld};
+
+        # Or empty concats
+        $kill_me_please = 0 unless $#{$cld_ref};
+      }
     }
 
     when ('string') {
       if ($current_node{eol}) {
         ${$current_node_ref}{value} =~ s/\\n$//;
+        if (${$current_node_ref}{value} eq '') {
+          $kill_me_please = 1;
+        }
 
         $eol_please = 1;
       }
     }
   }
 
-  return $eol_please;
+  return ($eol_please, $kill_me_please);
 }
 
 sub compile_string {
@@ -172,7 +185,7 @@ sub compile_print {
   my %node = %{shift @_};
   my $print_args_ref = ${$node{cld}}[0];
 
-  my $eol_please = massage_string_concat_under_print_context($print_args_ref);
+  my ($eol_please, $_) = massage_string_concat_under_print_context($print_args_ref);
 
   if ($eol_please) {
     emit_keyword('print');
