@@ -12,16 +12,23 @@ sub display {
   print;
 }
 
-sub emit_string {
-  print shift @_, "\n";
+sub emit_internal_string {
+  print shift;
+}
+
+sub emit_node_value {
+  my %node = %{shift @_};
+
+  die("Expecting value inside node ", display(\%node)) unless defined($node{value});
+  emit_internal_string($node{value});
+}
+
+sub emit_statement_begin {
+  print "\n" . ('  ' x $cs{depth});
 }
 
 sub emit {
   print shift @_, " ";
-}
-
-sub emit_newline {
-  print "\n" . ('  ' x $cs{depth});
 }
 
 sub lookup_variable {
@@ -31,15 +38,11 @@ sub lookup_variable {
 }
 
 sub compile_comment {
-  my %node = %{shift @_};
-
-  emit_string($node{value});
+  emit_node_value(shift @_);
 }
 
 sub compile_number {
-  my %node = %{shift @_};
-
-  emit($node{value});
+  emit_node_value(shift @_);
 }
 
 sub compile_comma_sep_expr_onlist {
@@ -208,11 +211,11 @@ sub compile_body {
   $cs{depth}++;
 
   emit(':');
-  emit_newline();
+  emit_statement_begin();
 
   for my $node_ref (@{$node{cld}}) {
     compile_node($node_ref);
-    emit_newline();
+    emit_statement_begin();
   }
 
   $cs{depth}--;
@@ -221,9 +224,12 @@ sub compile_body {
 sub compile_program {
   my %node = %{shift @_};
 
-  emit_string("#!/usr/bin/python2 -u");
-  emit_string("import sys");
-  emit_newline();
+  # Small hack to get our preamble set up
+  emit_node_value({'value' => "#!/usr/bin/python2 -u"});
+  emit_statement_begin();
+  emit_node_value({'value' => "import sys"});
+  emit_statement_begin();
+  emit_statement_begin();
 
   my @cld = @{$node{cld}};
 
@@ -234,7 +240,7 @@ sub compile_program {
 
   for my $node_ref (@cld) {
     compile_node($node_ref);
-    emit_newline();
+    emit_statement_begin();
   }
 }
 
