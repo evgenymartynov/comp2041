@@ -162,6 +162,7 @@ sub interpolate_string {
   # Pull out things like /$(?!\d)\w+/
   my $id_regex = qr((\$(?!\d)\w+)); # Capture group makes split return seps too
   my @fragments = split $id_regex, $string;
+  my $last_text_fragment = undef;
 
   while (@fragments) {
     my $text = shift @fragments;
@@ -169,6 +170,13 @@ sub interpolate_string {
 
     push @cld, p_node_with_value('string', $text) if $text;
     push @cld, p_stringify(p_node_with_value('scalar', $var)) if defined($var);
+
+    $last_text_fragment = defined($var) ? undef : $text;
+  }
+
+  # Does this string have EOL?
+  if ($last_text_fragment =~ /\\n$/) {  # TODO: breaks if \\\\\\n.
+    ${$cld[$#cld]}{eol} = 1;
   }
 
   return \%node;

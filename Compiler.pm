@@ -3,6 +3,7 @@ package Compiler;
 use strict;
 use Data::Dumper;
 use Switch;
+use feature qw(switch);
 
 our (%cs, %emitter_state, %emitter_stack);
 
@@ -126,6 +127,31 @@ sub compile_stringify {
   compile_function_call('str', ${$node{cld}}[0]);
 }
 
+sub massage_string_concat_under_print_context {
+  my $current_node_ref = shift;   # Need the ref to strip newlines
+  my %current_node = %{$current_node_ref};
+  my @cld = @{$current_node{cld}};
+
+  my $eol_please = 0;
+
+  given ($current_node{type}) {
+    when ('comma_sep_string_concat') {
+      my $rightmost_ref = $cld[$#cld];
+      return massage_string_concat_under_print_context($rightmost_ref);
+    }
+
+    when ('string') {
+      if ($current_node{eol}) {
+        ${$current_node_ref}{value} =~ s/\\n$//;
+
+        $eol_please = 1;
+      }
+    }
+  }
+
+  return $eol_please;
+}
+
 sub compile_string {
   my %node = %{shift @_};
 
@@ -144,8 +170,16 @@ sub compile_scalar {
 
 sub compile_print {
   my %node = %{shift @_};
+  my $print_args_ref = ${$node{cld}}[0];
 
-  compile_function_call('sys.stdout.write', @{$node{cld}}[0]);
+  my $eol_please = massage_string_concat_under_print_context($print_args_ref);
+
+  if ($eol_please) {
+    emit_keyword('print');
+    compile_comma_sep_expr_onlist($print_args_ref);
+  } else {
+    compile_function_call('sys.stdout.write', $print_args_ref);
+  }
 }
 
 sub compile_comma_sep_expr {
