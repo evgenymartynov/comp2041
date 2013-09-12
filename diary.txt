@@ -14,3 +14,4 @@ date:start:end:description
 12/09:0300:0415:Added if() statements and comparisons. Come at me, sleep.
 12/09:0420:0425:Added while() loops spider pig spider pig does whatever a spider pig does something something i am on drugs
 12/09:0425:0455:Added range-based for-each loops. I think I can pass the Turing test, but am I a human?
+12/09:1500:1900:Did stuff to clean up the output. Probably overkill.
