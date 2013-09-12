@@ -189,7 +189,7 @@ sub compile_print {
 
   if ($eol_please) {
     emit_keyword('print');
-    compile_comma_sep_expr_onlist($print_args_ref);
+    compile_comma_sep_string_concat($print_args_ref);
   } else {
     compile_function_call('sys.stdout.write', $print_args_ref);
   }
