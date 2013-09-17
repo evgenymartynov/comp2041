@@ -15,3 +15,4 @@ date:start:end:description
 12/09:0420:0425:Added while() loops spider pig spider pig does whatever a spider pig does something something i am on drugs
 12/09:0425:0455:Added range-based for-each loops. I think I can pass the Turing test, but am I a human?
 12/09:1500:1900:Did stuff to clean up the output. Probably overkill.
+17/09:2200:2240:Worked a bit on fixing op precedence and string comps
