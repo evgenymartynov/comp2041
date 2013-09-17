@@ -191,6 +191,14 @@ sub p_scalar {
   return p_leafget('scalar');
 }
 
+sub p_file_descriptor_caps {
+  return p_leafget('filedes');
+}
+
+sub p_file_descriptor {
+  return $tok{type} eq 'scalar' ? p_scalar() : p_file_descriptor_caps();
+}
+
 sub p_literal_number {
   return p_leafget('number');
 }
@@ -311,6 +319,10 @@ sub p_expression {
       expect('parenend');
 
       push @cld, $expression_ref;
+    }
+
+    when ('comparison' && $tok{match} eq '<') {
+      return p_file_read();
     }
 
     default {
@@ -482,6 +494,34 @@ sub p_foreach_expression {
   my $body_ref = p_body_expression();
 
   return p_node('foreach_expr', $iterator_ref, $range_ref, $body_ref);
+}
+
+sub p_file_read {
+  my @cld = ();
+  my %node = (
+    'type' => 'file_read',
+    'cld' => \@cld,
+  );
+
+  if ($tok{match} ne '<') {
+      display(\%tok);
+      display(\@all_tokens);
+      die "p_file_read: not sure what to do with this: ", Dumper(\%tok);
+  }
+  expect('comparison');
+
+  if ($tok{type} ne 'comparison') {
+    push @cld, p_file_descriptor();
+  }
+
+  if ($tok{match} ne '>') {
+      display(\%tok);
+      display(\@all_tokens);
+      die "p_file_read: not sure what to do with this: ", Dumper(\%tok);
+  }
+  expect('comparison');
+
+  return \%node;
 }
 
 sub p_statement {

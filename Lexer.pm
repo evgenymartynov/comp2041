@@ -37,6 +37,8 @@ my @patterns = (
   { 'type' => 'comparison', 're' => $pat_comparisons },
   { 'type' => 'assignment', 're' => '=' },
 
+  { 'type' => 'filedes',    're' => 'STDIN' },
+
   { 'type' => 'whitespace', 're' => qr([$pat_space]+) , 'ignore' => 1 },
   { 'type' => 'word',       're' => qr([^$pat_space$pat_special]+) },
 );

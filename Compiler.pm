@@ -293,6 +293,13 @@ sub compile_foreach {
   compile_node($body_ref);
 }
 
+sub compile_fileread {
+  my %node = %{shift @_};
+
+  compile_function_call('__p2p_readline');
+  warn 'todo filedes';
+}
+
 sub compile_body {
   my %node = %{shift @_};
 
@@ -313,10 +320,17 @@ sub compile_program {
   my %node = %{shift @_};
 
   # Small hack to get our preamble set up
-  emit_node_value({'value' => "#!/usr/bin/python2 -u"});
-  emit_statement_begin();
-  emit_node_value({'value' => "import sys"});
-  emit_statement_begin();
+  emit_internal_string(
+      "#!/usr/bin/python2 -u\n\n"
+    . "import sys\n\n"
+    . "def __p2p_readline():\n"
+    . "  try:\n"
+    . "    line = raw_input()\n"
+    . "  except EOFError:\n"
+    . "    line = None\n"
+    . "  return line\n\n"
+    . "###\n"
+    );
   emit_statement_begin();
 
   my @cld = @{$node{cld}};
@@ -358,6 +372,8 @@ sub compile_node {
     case 'foreach_expr'     { compile_foreach         (\%node); }
 
     case 'parenthesise'     { compile_parenthesise    (\%node); }
+
+    case 'file_read'        { compile_fileread        (\%node); }
 
     # I hate perl at times. More so than the other times when I want to kill it.
     case 'comma_sep_string_concat' { compile_comma_sep_string_concat(\%node); }
