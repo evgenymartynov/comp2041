@@ -6,7 +6,16 @@ use Switch;
 
 use feature qw(switch);
 
-our (@all_tokens, %tok);
+our (@all_tokens, %tok, %strop_to_cmpop);
+
+%strop_to_cmpop = (
+  'eq' => '==',
+  'ne' => '!=',
+  'lt' => '<',
+  'le' => '<=',
+  'gt' => '>',
+  'ge' => '>=',
+);
 
 sub display {
   local $Data::Dumper::Terse = 1;
@@ -60,6 +69,16 @@ sub pinternal_printfmt {
   );
 
   return \%print_invocation;
+}
+
+sub is_relational {
+  my @ops = qw(< > <= >= le lt ge gt);
+  return $tok{match} ~~ @ops;
+}
+
+sub is_equality {
+  my @ops = qw(== != eq ne);
+  return $tok{match} ~~ @ops;
 }
 
 sub is_additive {
@@ -297,6 +316,52 @@ sub p_range_expression {
   return p_node('range', $left_ref, $right_excl_ref);
 }
 
+sub p_expression_todo {
+  if ($tok{type} eq 'string') {
+    return p_string();
+  }
+
+  return p_range_expression();
+}
+
+sub p_expression_relational {
+  my $left_ref = p_expression_todo();
+  if (!is_relational) {
+    return $left_ref;
+  }
+
+  my $op = ${consume()}{match};
+  $op = $strop_to_cmpop{$op} // $op;
+
+  return {
+    'type' => 'comparison',
+    'operator' => $op,
+    'cld' => [
+      $left_ref,
+      p_expression_todo(),
+    ]
+  };
+}
+
+sub p_expression_equality {
+  my $left_ref = p_expression_relational();
+  if (!is_equality) {
+    return $left_ref;
+  }
+
+  my $op = ${consume()}{match};
+  $op = $strop_to_cmpop{$op} // $op;
+
+  return {
+    'type' => 'comparison',
+    'operator' => $op,
+    'cld' => [
+      $left_ref,
+      p_expression_relational(),
+    ]
+  };
+}
+
 sub p_expression {
   my @cld = ();
   my %node = (
@@ -305,12 +370,8 @@ sub p_expression {
   );
 
   given ($tok{type}) {
-    when ('string') {
-      push @cld, p_string();
-    }
-
-    when (['number', 'scalar']) {
-      push @cld, p_range_expression();
+    when (['string', 'number', 'scalar']) {
+      push @cld, p_expression_equality();
     }
 
     when ('parenbegin') {

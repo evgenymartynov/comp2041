@@ -35,6 +35,8 @@ my @patterns = (
   { 'type' => 'scalar',     're' => "\\\$[$pat_variable_first][$pat_variable]*" },
 
   { 'type' => 'comparison', 're' => $pat_comparisons },
+  { 'type' => 'string-rel', 're' => 'le|lt|ge|gt' },
+  { 'type' => 'string-eq',  're' => 'eq|ne' },
   { 'type' => 'assignment', 're' => '=' },
 
   { 'type' => 'filedes',    're' => 'STDIN' },
