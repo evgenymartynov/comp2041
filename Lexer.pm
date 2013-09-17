@@ -30,7 +30,7 @@ my @patterns = (
   { 'type' => 'range',      're' => '\.\.' },
 
   { 'type' => 'number',     're' => qr(-?([1-9][0-9]*|0)\b) },
-  { 'type' => 'operator',   're' => '[+-/*]' },
+  { 'type' => 'operator',   're' => '\*\*|[+-/*%]' },
   { 'type' => 'scalar',     're' => "\\\$[$pat_variable_first][$pat_variable]*" },
 
   { 'type' => 'comparison', 're' => $pat_comparisons },

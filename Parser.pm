@@ -68,7 +68,7 @@ sub is_additive {
 }
 
 sub is_multiplicative {
-  my @muliplicatives = qw(* /);
+  my @muliplicatives = qw(* / ** %);
   return $tok{type} eq 'operator' && $tok{match} ~~ @muliplicatives;
 }
 
