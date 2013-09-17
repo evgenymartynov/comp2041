@@ -264,6 +264,7 @@ sub compile_if {
   emit_keyword('if');
   compile_node($cond_ref);
   compile_node($true_ref);
+  emit_keyword('else') if defined($false_ref);
   compile_node($false_ref) if defined($false_ref);
 }
 
@@ -298,14 +299,14 @@ sub compile_body {
   $cs{depth}++;
 
   emit_token(':');
-  emit_statement_begin();
 
   for my $node_ref (@{$node{cld}}) {
-    compile_node($node_ref);
     emit_statement_begin();
+    compile_node($node_ref);
   }
 
   $cs{depth}--;
+  emit_statement_begin();
 }
 
 sub compile_program {

@@ -436,7 +436,10 @@ sub p_body_expression {
 
 sub p_if_expression {
   expect('if');
+  return p_if_expression_internal();
+}
 
+sub p_if_expression_internal {
   my $condition_ref = p_expression();
   my $if_true = p_body_expression();
   my $if_false = undef;
@@ -444,6 +447,19 @@ sub p_if_expression {
   if ($tok{type} eq 'else') {
     expect('else');
     $if_false = p_body_expression();
+  } elsif ($tok{type} eq 'elsif') {
+    expect('elsif');
+
+    my $nested = p_if_expression_internal();
+
+    my @ffs = ($nested);
+
+    my %elsif = (
+      'type' => 'body',
+      'cld' => \@ffs,
+    );
+
+    $if_false = \%elsif;
   }
 
   return p_node('if_expr', $condition_ref, $if_true, $if_false);
