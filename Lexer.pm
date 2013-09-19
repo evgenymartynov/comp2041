@@ -35,11 +35,11 @@ my @patterns = (
   { 'type' => 'scalar',     're' => "\\\$[$pat_variable_first][$pat_variable]*" },
 
   { 'type' => 'comparison', 're' => $pat_comparisons },
-  { 'type' => 'string-rel', 're' => 'le|lt|ge|gt' },
-  { 'type' => 'string-eq',  're' => 'eq|ne' },
+  { 'type' => 'string-rel', 're' => qr(\b(le|lt|ge|gt)\b) },
+  { 'type' => 'string-eq',  're' => qr(\b(eq|ne)\b) },
   { 'type' => 'assignment', 're' => '=' },
 
-  { 'type' => 'filedes',    're' => 'STDIN' },
+  { 'type' => 'filedes',    're' => qr(\bSTDIN\b) },
 
   { 'type' => 'whitespace', 're' => qr([$pat_space]+) , 'ignore' => 1 },
   { 'type' => 'word',       're' => qr([^$pat_space$pat_special]+) },
