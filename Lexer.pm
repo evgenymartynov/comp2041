@@ -8,6 +8,8 @@ my $pat_variable = "${pat_variable_first}0-9";
 my $pat_kw = join '|', qw(print printf shift undef);
 my $pat_comparisons = join '|', qw(<= >= == != < >);
 
+my $pat_operators = join '|', qw(\+ - \* / % \*\* x \.); # TODO add logicals
+
 my @patterns = (
   { 'type' => 'comment',    're' => qr(#.*\n), 'chomp' => 1 },
 
@@ -30,14 +32,21 @@ my @patterns = (
 
   { 'type' => 'range',      're' => '\.\.' },
 
+  { 'type' => 'comparison', 're' => $pat_comparisons },
+  { 'type' => 'assignment', 're' => qr(($pat_operators)=) },
+  { 'type' => 'assignment', 're' => '=' },
+
   { 'type' => 'number',     're' => qr(-?([1-9][0-9]*|0)\b) },
   { 'type' => 'operator',   're' => '\*\*|[+-/*%]' },
   { 'type' => 'scalar',     're' => "\\\$[$pat_variable_first][$pat_variable]*" },
 
-  { 'type' => 'comparison', 're' => $pat_comparisons },
   { 'type' => 'string-rel', 're' => qr(\b(le|lt|ge|gt)\b) },
   { 'type' => 'string-eq',  're' => qr(\b(eq|ne)\b) },
-  { 'type' => 'assignment', 're' => '=' },
+
+  { 'type' => 'lp-not',     're' => qr(\bnot\b) },
+  { 'type' => 'lp-and',     're' => qr(\band\b) },
+  { 'type' => 'lp-or',      're' => qr(\bor\b) },
+  { 'type' => 'lp-xor',     're' => qr(\bxor\b) },
 
   { 'type' => 'filedes',    're' => qr(\bSTDIN\b) },
 

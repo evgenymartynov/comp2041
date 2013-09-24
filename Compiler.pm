@@ -217,14 +217,21 @@ sub compile_comma_sep_string_concat {
   }
 }
 
-sub compile_assign {
+sub compile_assignment {
   my %node = %{shift @_};
 
   my $lvalue_node_ref = ${$node{cld}}[0];
   my $rvalue_node_ref = ${$node{cld}}[1];
 
   compile_node($lvalue_node_ref);
-  emit_token('=');
+
+  emit_token(
+    (defined $node{operator}
+        ? $node{operator}
+        : '')
+    . '='
+  );
+
   compile_node($rvalue_node_ref);
 }
 
@@ -244,6 +251,7 @@ sub compile_binary_op_expr {
   my $lop_ref = shift @{$node{cld}};
   my $rop_ref = shift @{$node{cld}};
 
+  emit_token('(');
   compile_node($lop_ref);
 
   while (defined($rop_ref)) {
@@ -252,6 +260,8 @@ sub compile_binary_op_expr {
 
     $rop_ref = shift @{$node{cld}};
   }
+
+  emit_token(')');
 }
 
 sub compile_if {
@@ -359,9 +369,10 @@ sub compile_node {
     case 'scalar'           { compile_scalar          (\%node); }
     case 'range'            { compile_range           (\%node); }
 
-    case 'assign'           { compile_assign          (\%node); }
+    case 'assignment'       { compile_assignment      (\%node); }
     case 'add_expr'         { compile_binary_op_expr  (\%node); }
     case 'mul_expr'         { compile_binary_op_expr  (\%node); }
+    case 'power'            { compile_binary_op_expr  (\%node); }
     case 'comparison'       { compile_binary_op_expr  (\%node); }
     case 'comma_sep_expr'   { compile_comma_sep_expr  (\%node); }
 

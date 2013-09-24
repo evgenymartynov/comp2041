@@ -87,8 +87,13 @@ sub is_additive {
 }
 
 sub is_multiplicative {
-  my @muliplicatives = qw(* / ** %);
+  my @muliplicatives = qw(* / % x);
   return $tok{type} eq 'operator' && $tok{match} ~~ @muliplicatives;
+}
+
+sub is_high_precedence_unary {
+  my @ops = qw(! ~ \\ + -);
+  return $tok{type} eq 'operator' && $tok{match} ~~ @ops;
 }
 
 sub is_assignment {
@@ -251,8 +256,36 @@ sub p_simple_value {
   }
 }
 
-sub p_mul_expression {
+sub p_expression_power {
   my $left_ref = p_simple_value();
+
+  if ($tok{type} ne 'operator' || $tok{match} ne '**') {
+    return $left_ref;
+  }
+
+  expect('operator');
+
+  my %node = %{p_node('power', $left_ref, p_expression_power())};
+  $node{operator} = '**';
+
+  return \%node;
+}
+
+sub p_expression_high_precedence_unary {
+  if (!is_high_precedence_unary) {
+    return p_expression_power();
+  }
+
+  my $unary = consume();
+  return {
+    'type' => 'unary',
+    'operator' => $unary,
+    'cld' => [ p_expression_high_precedence_unary() ],
+  };
+}
+
+sub p_mul_expression {
+  my $left_ref = p_expression_high_precedence_unary();
 
   if (!is_multiplicative) {
     return $left_ref;
@@ -358,7 +391,97 @@ sub p_expression_equality {
     'cld' => [
       $left_ref,
       p_expression_relational(),
-    ]
+    ],
+  };
+}
+
+sub p_expression_TODO {
+  return p_expression_equality();
+}
+
+# Additive, concat.
+
+# Comparisons go here.
+
+# *Named* unaries.
+
+# Bitwise/logical ops go here.
+
+# Ternary, ranges , ..., go here.
+
+sub p_expression_assignment {
+  my $left_ref = p_expression_TODO();
+  if ($tok{type} ne 'assignment') {
+    return $left_ref;
+  }
+
+  # Extract the operator from *=, +=, etc.
+  my $op = (length($tok{match}) == 2) ? substr($tok{match}, 0, 1) : undef;
+  expect('assignment');
+
+  return {
+    'type' => 'assignment',
+    'operator' => $op,
+    'cld' => [
+        $left_ref,
+        p_expression_assignment(),
+    ],
+  };
+}
+
+sub p_expression_low_precedence_logical_not {
+  if ($tok{type} ne 'not') {
+    return p_expression_assignment();
+  }
+
+  expect('lp-not');
+
+  return {
+    'type' => 'logical',
+    'operator' => 'not',
+    'cld' => [
+        p_expression_low_precedence_logical_not(),
+    ],
+  };
+}
+
+sub p_expression_low_precedence_logical_and {
+  my $left_ref = p_expression_low_precedence_logical_not();
+  if ($tok{type} ne 'lp-and') {
+    return $left_ref;
+  }
+
+  expect('lp-and');
+
+  return {
+    'type' => 'logical',
+    'operator' => 'and',
+    'cld' => [
+        $left_ref,
+        p_expression_low_precedence_logical_and(),
+    ],
+  };
+}
+
+sub p_expression_low_precedence_logical_ors {
+  my $left_ref = p_expression_low_precedence_logical_and();
+  my @ops = qw(lp-or lp-xor);
+
+  if (!($tok{type} ~~ @ops)) {
+    return $left_ref;
+  }
+
+  my $op = substr ${consume()}{type}, 3;  # drop the "lp-"
+
+  my @cld = (
+    $left_ref,
+    p_expression_low_precedence_logical_ors(),
+  );
+
+  return {
+    'type' => 'logical',
+    'operator' => $op,
+    'cld' => \@cld,
   };
 }
 
@@ -371,7 +494,7 @@ sub p_expression {
 
   given ($tok{type}) {
     when (['string', 'number', 'scalar']) {
-      push @cld, p_expression_equality();
+      push @cld, p_expression_low_precedence_logical_ors();
     }
 
     when ('parenbegin') {
