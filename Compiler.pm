@@ -245,6 +245,24 @@ sub compile_parenthesise {
   emit_token(')');
 }
 
+sub compile_foldl {
+  my $node = shift @_;
+  my @cld = @{$node->{cld}};
+
+  while (@cld) {
+    my $item = shift @cld;
+    given ($item->{type}) {
+      when ('operator') {
+        emit_token($item->{operator});
+      }
+
+      default {
+        compile_node($item);
+      }
+    }
+  }
+}
+
 sub compile_binary_op_expr {
   my %node = %{shift @_};
 
@@ -368,6 +386,8 @@ sub compile_node {
     case 'string'           { compile_string          (\%node); }
     case 'scalar'           { compile_scalar          (\%node); }
     case 'range'            { compile_range           (\%node); }
+
+    case 'foldl'            { compile_foldl           (\%node); }
 
     case 'assignment'       { compile_assignment      (\%node); }
     case 'add_expr'         { compile_binary_op_expr  (\%node); }

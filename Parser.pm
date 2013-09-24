@@ -232,7 +232,10 @@ sub p_literal_assignment {
 }
 
 sub p_literal_op {
-  return p_leafget('operator');
+  my $op = $tok{match};
+  my $ref = p_leafget('operator');
+  $ref->{operator} = $op;
+  return $ref;
 }
 
 sub p_literal_comparison {
@@ -301,19 +304,18 @@ sub p_mul_expression {
 }
 
 sub p_add_expression {
-  my $left_ref = p_mul_expression();
+  my @cld = ( p_mul_expression() );
 
-  if (!is_additive) {
-    return $left_ref;
+  while (is_additive) {
+    push @cld, p_literal_op();
+    push @cld, p_mul_expression();
   }
 
-  my %op = %{p_literal_op()};
-  my $right_ref = p_add_expression();
-
-  my %node = %{p_node('add_expr', $left_ref, $right_ref)};
-  $node{operator} = ${op}{value};
-
-  return \%node;
+  if ($#cld > 1) {
+    return p_node('foldl', @cld);
+  } else {
+    return $cld[0];
+  }
 }
 
 sub p_comparison_expression {
