@@ -721,8 +721,11 @@ sub p_program {
   );
 
   while ($tok{type} ne 'eof') {
-    my $node_ref = p_statement();
-    push @cld, $node_ref;
+    if ($tok{type} eq 'comment') {
+      push @cld, p_comment();
+    } else {
+      push @cld, p_statement();
+    }
   }
 
   return \%node;
@@ -736,7 +739,7 @@ sub parse {
   # display(\@all_tokens);
 
   my %tree = %{p_program()};
-  display(\%tree);
+  # display(\%tree);
   print "## Parsed!\n";
 
   return \%tree;
