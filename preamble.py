@@ -9,12 +9,11 @@ def __p2p_readline():
     line = None
   return line
 
-def __p2p_print(*args):
+def __p2p_print(args):
   for v in args:
     sys.stdout.write(str(v))
 
-def __p2p_printf(*args):
-  args = list(args)
+def __p2p_printf(args):
   fmt = args.pop(0)
   sys.stdout.write(fmt % tuple(map(str, args)))
 

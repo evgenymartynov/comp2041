@@ -123,6 +123,9 @@ sub compile_range {
 
 sub compile_comma {
   my $node = shift;
+  my $brackets = length @{$node->{cld}} > 1;
+
+  emit_token('[') if $brackets;
 
   foreach my $child (@{$node->{cld}}) {
     given ($child->{type}) {
@@ -135,6 +138,8 @@ sub compile_comma {
       }
     }
   }
+
+  emit_token(']') if $brackets;
 }
 
 sub compile_stringify {
