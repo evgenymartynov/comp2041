@@ -458,9 +458,25 @@ sub p_expression_comma {
   return p_node('comma', @cld);
 }
 
+sub p_expression_rightward_list_op {
+  if ($tok{type} eq 'keyword') {
+    given ($tok{match}) {
+      when (['print', 'printf']) {
+        return p_print_statement();
+      }
+    }
+
+    default {
+      die 'unknown keyword when parsing rightward list ops', Dumper(\%tok);
+    }
+  } else {
+    return p_expression_comma();
+  }
+}
+
 sub p_expression_low_precedence_logical_not {
   if ($tok{type} ne 'not') {
-    return p_expression_comma();
+    return p_expression_rightward_list_op();
   }
 
   expect('lp-not');
@@ -582,17 +598,8 @@ sub p_value {
   }
 }
 
-sub p_assignment {
-  my $lvalue_ref = p_expression();
-
-  if (is_assignment) {
-    my $assignment_ref = p_literal_assignment();
-    my $rvalue_ref = p_assignment();
-
-    return p_node('assign', $lvalue_ref, $rvalue_ref);
-  } else {
-    return $lvalue_ref;
-  }
+sub p_expression_start {
+  return p_expression_low_precedence_logical_ors();
 }
 
 sub p_body_expression {
@@ -693,58 +700,10 @@ sub p_file_read {
 }
 
 sub p_statement {
-  my $result_ref = undef;
+  my $result_ref = p_expression_start();
 
-  given ($tok{type}) {
-    when ('comment') {
-      return p_comment();
-    }
-
-    when ('keyword') {
-      given ($tok{match}) {
-        when (['print', 'printf'])    {
-          $result_ref = p_print_statement();
-        }
-
-        default         {
-          die "Forgot to catch a keyword :(";
-        }
-      }
-    }
-
-    when ('if') {
-      return p_if_expression();
-    }
-
-    when ('while') {
-      return p_while_expression();
-    }
-
-    when ('foreach') {
-      return p_foreach_expression();
-    }
-
-    when ('blockend') {
-      return;
-    }
-
-    default             {
-      $result_ref = p_assignment();
-    }
-  }
-
-  given ($tok{type}) {
-    when ('semicolon') {
-      expect('semicolon');
-    }
-
-    when ('blockend') {
-      break;
-    }
-
-    default {
-      die 'Expected semicolon or block end, got this instead: ', display(\%tok);;
-    }
+  if ($tok{type} eq 'semicolon') {
+    expect('semicolon');
   }
 
   if (defined($result_ref)) {
@@ -777,7 +736,7 @@ sub parse {
   # display(\@all_tokens);
 
   my %tree = %{p_program()};
-  # display(\%tree);
+  display(\%tree);
   print "## Parsed!\n";
 
   return \%tree;
