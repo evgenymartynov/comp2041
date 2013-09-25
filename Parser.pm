@@ -464,10 +464,22 @@ sub p_expression_rightward_list_op {
       when (['print', 'printf']) {
         return p_print_statement();
       }
+
+      when ('if') {
+        return p_if_expression();
+      }
+
+      when ('while') {
+        return p_while_expression();
+      }
+
+      when ('foreach') {
+        return p_foreach_expression();
+      }
     }
 
     default {
-      die 'unknown keyword when parsing rightward list ops', Dumper(\%tok);
+      die 'unknown keyword when parsing rightward list ops ', Dumper(\%tok);
     }
   } else {
     return p_expression_comma();
@@ -622,7 +634,7 @@ sub p_body_expression {
 }
 
 sub p_if_expression {
-  expect('if');
+  expect('keyword');
   return p_if_expression_internal();
 }
 
@@ -631,11 +643,11 @@ sub p_if_expression_internal {
   my $if_true = p_body_expression();
   my $if_false = undef;
 
-  if ($tok{type} eq 'else') {
-    expect('else');
+  if ($tok{type} eq 'keyword' && $tok{match} eq 'else') {
+    expect('keyword');
     $if_false = p_body_expression();
-  } elsif ($tok{type} eq 'elsif') {
-    expect('elsif');
+  } elsif ($tok{type} eq 'keyword' && $tok{match} eq 'elsif') {
+    expect('keyword');
 
     my $nested = p_if_expression_internal();
 
@@ -653,7 +665,7 @@ sub p_if_expression_internal {
 }
 
 sub p_while_expression {
-  expect('while');
+  expect('keyword');
 
   my $condition_ref = p_expression();
   my $body_ref = p_body_expression();
@@ -662,7 +674,7 @@ sub p_while_expression {
 }
 
 sub p_foreach_expression {
-  expect('foreach');
+  expect('keyword');
 
   my $iterator_ref = p_scalar();
   my $range_ref = p_expression();

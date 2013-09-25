@@ -123,11 +123,12 @@ sub compile_range {
 
 sub compile_comma {
   my $node = shift;
-  my $brackets = length @{$node->{cld}} > 1;
+  my @cld = @{$node->{cld}};
+  my $brackets = $#cld > 1;
 
   emit_token('[') if $brackets;
 
-  foreach my $child (@{$node->{cld}}) {
+  foreach my $child (@cld) {
     given ($child->{type}) {
       when ('comma') {
         emit_token(',');
@@ -206,7 +207,10 @@ sub compile_call {
   my %node = %{shift @_};
 
   my $func = $node{func};
-  compile_function_call($func, @{$node{cld}});
+  emit_identifier($func);
+  emit_token("(");
+  compile_comma($node{cld}->[0]);
+  emit_token(")");
 }
 
 sub compile_comma_sep_expr {
