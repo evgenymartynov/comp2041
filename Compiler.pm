@@ -392,6 +392,7 @@ sub compile_node {
     case 'assignment'       { compile_assignment      (\%node); }
     case 'add_expr'         { compile_binary_op_expr  (\%node); }
     case 'mul_expr'         { compile_binary_op_expr  (\%node); }
+    case 'logical'          { compile_binary_op_expr  (\%node); }
     case 'power'            { compile_binary_op_expr  (\%node); }
     case 'comparison'       { compile_binary_op_expr  (\%node); }
     case 'comma_sep_expr'   { compile_comma_sep_expr  (\%node); }

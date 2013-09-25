@@ -43,6 +43,10 @@ my @patterns = (
   { 'type' => 'string-rel', 're' => qr(\b(le|lt|ge|gt)\b) },
   { 'type' => 'string-eq',  're' => qr(\b(eq|ne)\b) },
 
+  { 'type' => 'not',        're' => qr(!) },
+  { 'type' => 'and',        're' => qr(\&\&) },
+  { 'type' => 'or',         're' => qr(\|\|) },
+
   { 'type' => 'lp-not',     're' => qr(\bnot\b) },
   { 'type' => 'lp-and',     're' => qr(\band\b) },
   { 'type' => 'lp-or',      're' => qr(\bor\b) },
