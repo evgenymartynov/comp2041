@@ -49,26 +49,11 @@ sub p_parenthesise {
   return p_node('parenthesise', @_);
 }
 
-sub pinternal_printfmt {
-  my $fmt_ref = shift;
-  my $variadic_ref = shift;
-
-  my @modulo_args = ($fmt_ref, p_parenthesise($variadic_ref));
-
-  my %modulo = (
-    'operator' => '%',
-    'type'     => 'mul_expr',
-    'cld'      => \@modulo_args,
-  );
-
-  my @perl_sucks = ( \%modulo );
-
-  my %print_invocation = (
-    'type' => 'print_expr',
-    'cld'  => \@perl_sucks,
-  );
-
-  return \%print_invocation;
+sub p_emit_cheat {
+  my ($p2p_builtin, @args) = @_;
+  my $ref = p_node('call', @args);
+  $ref->{func} = '__p2p_' . $p2p_builtin;
+  return $ref;
 }
 
 sub is_relational {
@@ -461,9 +446,21 @@ sub p_expression_assignment {
   };
 }
 
+sub p_expression_comma {
+  my @cld = ( p_expression_assignment() );
+
+  while ($tok{type} eq 'comma') {
+    expect('comma');
+    push @cld, p_node('comma');
+    push @cld, p_expression_assignment();
+  }
+
+  return p_node('comma', @cld);
+}
+
 sub p_expression_low_precedence_logical_not {
   if ($tok{type} ne 'not') {
-    return p_expression_assignment();
+    return p_expression_comma();
   }
 
   expect('lp-not');
@@ -551,75 +548,30 @@ sub p_expression {
   return $cld[0];
 }
 
-sub p_comma_sep_expressions {
-  my @cld = ();
-  my %node = (
-    'type' => 'comma_sep_expr',
-    'cld' => \@cld,
-  );
-
-  while (1) {
-    push @cld, p_expression();
-
-    if ($tok{type} eq 'comma') {
-      expect('comma');
-    } elsif ($tok{type} eq 'semicolon' || $tok{type} eq 'blockend') {
-      last;
-    }
-  }
-
-  return \%node;
-}
-
 sub p_stringify {
   return p_node('stringify', shift);
 }
 
-sub p_comma_separated_string_concatenation {
-  my @cld = ();
-  my %node = (
-    'type' => 'comma_sep_string_concat',
-    'cld' => \@cld,
-  );
+sub p_expression_funcargs_inner {
+  return p_expression_comma();
+}
 
-  my $statements = ${p_comma_sep_expressions()}{cld};
+sub p_expression_funcargs {
+  my $gobble = $tok{type} eq 'parenbegin';
 
-  while (my $node_ref = shift @{$statements}) {
-    my $type = ${$node_ref}{type};
+  expect('parenbegin') if $gobble;
+  my $ref = p_expression_funcargs_inner();
+  expect('parenend') if $gobble;
 
-    if (!is_string_type($type)) {
-      push @cld, p_stringify($node_ref);
-    } elsif ($type eq 'string') {
-      push @cld, interpolate_string($node_ref);
-    } else {
-      die 'u wot mate' unless is_string_type($type);
-      push @cld, $node_ref;
-    }
-  }
-
-  return \%node;
+  return $ref;
 }
 
 sub p_print_statement {
-  my @cld = ();
-  my %node = (
-    'type' => 'print_expr',
-    'cld' => \@cld,
-  );
-
+  my $func = $tok{match};
   expect('keyword');
-  push @cld, p_comma_separated_string_concatenation();
 
-  return \%node;
-}
-
-sub p_printfmt_statement {
-  expect('keyword');
-  my $fmt_ref = p_expression();
-  expect('comma');
-  my $variadic_ref = p_comma_sep_expressions();
-
-  return pinternal_printfmt($fmt_ref, $variadic_ref);
+  my $args = p_expression_funcargs();
+  return p_emit_cheat($func, $args);
 }
 
 sub p_value {
@@ -750,12 +702,8 @@ sub p_statement {
 
     when ('keyword') {
       given ($tok{match}) {
-        when ('print')    {
+        when (['print', 'printf'])    {
           $result_ref = p_print_statement();
-        }
-
-        when ('printf')   {
-          $result_ref = p_printfmt_statement();
         }
 
         default         {

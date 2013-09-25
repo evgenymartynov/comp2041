@@ -21,9 +21,9 @@ sub emit_internal_string {
   my $string = shift;
   die "Trying to emit undefined string :(" unless defined($string);
 
-  if (!$emitter_state{suppress_space_once} || $emitter_state{suppress_space_override}) {
-    $string = " $string";
-  }
+# if (!$emitter_state{suppress_space_once} || $emitter_state{suppress_space_override}) {
+    $string = "$string ";
+# }
 
   $emitter_state{suppress_space_once} = 0;
   $emitter_state{suppress_space_override} = 0;
@@ -121,6 +121,22 @@ sub compile_range {
   compile_function_call('xrange', $from_ref, $to_ref);
 }
 
+sub compile_comma {
+  my $node = shift;
+
+  foreach my $child (@{$node->{cld}}) {
+    given ($child->{type}) {
+      when ('comma') {
+        emit_token(',');
+      }
+
+      default {
+        compile_node($child);
+      }
+    }
+  }
+}
+
 sub compile_stringify {
   my %node = %{shift @_};
 
@@ -181,18 +197,11 @@ sub compile_scalar {
   emit_identifier(lookup_variable($node{value}));
 }
 
-sub compile_print {
+sub compile_call {
   my %node = %{shift @_};
-  my $print_args_ref = ${$node{cld}}[0];
 
-  my ($eol_please, $_) = massage_string_concat_under_print_context($print_args_ref);
-
-  if ($eol_please) {
-    emit_keyword('print');
-    compile_comma_sep_string_concat($print_args_ref);
-  } else {
-    compile_function_call('sys.stdout.write', $print_args_ref);
-  }
+  my $func = $node{func};
+  compile_function_call($func, @{$node{cld}});
 }
 
 sub compile_comma_sep_expr {
@@ -348,17 +357,10 @@ sub compile_program {
   my %node = %{shift @_};
 
   # Small hack to get our preamble set up
-  emit_internal_string(
-      "#!/usr/bin/python2 -u\n\n"
-    . "import sys\n\n"
-    . "def __p2p_readline():\n"
-    . "  try:\n"
-    . "    line = raw_input()\n"
-    . "  except EOFError:\n"
-    . "    line = None\n"
-    . "  return line\n\n"
-    . "###\n"
-    );
+  open F, '<preamble.py';
+  my $preamble = do { local $/ = undef; <F> };
+  close F;
+  emit_internal_string($preamble);
   emit_statement_begin();
 
   my @cld = @{$node{cld}};
@@ -387,6 +389,8 @@ sub compile_node {
     case 'scalar'           { compile_scalar          (\%node); }
     case 'range'            { compile_range           (\%node); }
 
+    case 'comma'            { compile_comma           (\%node); }
+
     case 'foldl'            { compile_foldl           (\%node); }
 
     case 'assignment'       { compile_assignment      (\%node); }
@@ -397,7 +401,7 @@ sub compile_node {
     case 'comparison'       { compile_binary_op_expr  (\%node); }
     case 'comma_sep_expr'   { compile_comma_sep_expr  (\%node); }
 
-    case 'print_expr'       { compile_print           (\%node); }
+    case 'call'             { compile_call            (\%node); }
 
     case 'if_expr'          { compile_if              (\%node); }
     case 'while_expr'       { compile_while           (\%node); }
