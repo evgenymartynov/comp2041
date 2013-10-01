@@ -220,6 +220,7 @@ sub p_simple_value {
     case 'string'     { return p_string();         }
     case 'number'     { return p_literal_number(); }
     case 'scalar'     { return p_scalar();         }
+    case 'parenbegin' { return p_expression_start(); }
 
     default           {
       display(\@all_tokens);
@@ -624,7 +625,15 @@ sub p_print_statement {
 }
 
 sub p_expression_start {
-  return p_expression_low_precedence_logical_ors();
+  my $gobble = $tok{type} eq 'parenbegin';
+
+  expect('parenbegin') if $gobble;
+  my $expression_ref = p_expression_low_precedence_logical_ors();
+  expect('parenend') if $gobble;
+
+  $expression_ref = p_parenthesise($expression_ref) if $gobble;
+
+  return $expression_ref;
 }
 
 sub p_body_expression {
