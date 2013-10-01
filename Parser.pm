@@ -27,14 +27,16 @@ sub peek {
 
 sub expect {
   my $exp = shift;
-  my %actual = %{shift @all_tokens};
-  my $actual = %actual ? $actual{type} : 'eof';
+  my $actual = shift @all_tokens;
+  my $type = defined($actual) ? $actual->{type} : 'eof';
 
-  die("expected $exp but got $actual instead;\n ", Dumper(\%actual), "\n", Dumper(\@all_tokens))
-      unless $exp eq $actual;
+  die("expected $exp but got $type instead;\n ",
+      Dumper($actual), "\n",
+      Dumper(\@all_tokens))
+      unless $exp eq $type;
 
   %tok = %{peek()};
-  return \%actual;
+  return $actual;
 }
 
 sub consume {
@@ -69,13 +71,13 @@ sub is_equality {
 }
 
 sub is_additive {
-  my @additives = qw(+ -);
-  return $tok{type} eq 'operator' && $tok{match} ~~ @additives;
+  my @ops = qw(+ -);
+  return $tok{type} eq 'operator' && $tok{match} ~~ @ops;
 }
 
 sub is_multiplicative {
-  my @muliplicatives = qw(* / % x);
-  return $tok{type} eq 'operator' && $tok{match} ~~ @muliplicatives;
+  my @ops = qw(* / % x);
+  return $tok{type} eq 'operator' && $tok{match} ~~ @ops;
 }
 
 sub is_bitwise_shift {
@@ -103,13 +105,16 @@ sub is_high_precedence_unary {
   return $tok{type} eq 'operator' && $tok{match} ~~ @ops;
 }
 
+sub is_low_prec_logical_ors {
+  my @ops = qw(lp-xor lp-or);
+  return $tok{type} ~~ @ops;
+}
+
 sub p_leaf {
-  my %node = (
+  return {
     'type' => shift,
     'value' => ${shift @_}{match},
-  );
-
-  return \%node;
+  };
 }
 
 sub p_leafget {
@@ -118,40 +123,32 @@ sub p_leafget {
 }
 
 sub p_node {
-  my $type = shift;
-  my @cld = @_;
-  my %node = (
+  my ($type, @cld) = @_;
+  return {
     'type' => $type,
     'cld' => \@cld,
-  );
-
-  return \%node;
+  };
 }
 
 sub p_node_with_value {
-  my $type = shift;
-  my $value = shift;
-  my @cld = ();
-
-  my %node = (
+  my ($type, $value) = @_;
+  return {
     'type' => $type,
-    'cld' => \@cld,
+    'cld' => [],
     'value' => $value,
-  );
-
-  return \%node;
+  };
 }
 
 # Does not operate on the global %tok.
 sub interpolate_string {
   my @cld = ();
-  my %node = (
+  my $node = {
     'type' => 'comma_sep_string_concat',  # Kind of cheating, but eh.
     'cld' => \@cld,
-  );
+  };
 
-  my %tok = %{shift @_};
-  my $quoted_string = $tok{match};
+  my $tok = shift;
+  my $quoted_string = $tok->{match};
   my $string = substr $quoted_string, 1, -1;
 
   my $is_raw = ($quoted_string =~ /^'/);
@@ -161,7 +158,7 @@ sub interpolate_string {
 
     push @cld, \%raw_node;
 
-    return \%node;
+    return $node;
   }
 
   # At this point, we know we have to do it :(
@@ -183,10 +180,10 @@ sub interpolate_string {
 
   # Does this string have EOL?
   if ($last_text_fragment =~ /\\n$/) {  # TODO: breaks if \\\\\\n.
-    ${$cld[$#cld]}{eol} = 1;
+    $cld[-1]->{eol} = 1;
   }
 
-  return \%node;
+  return $node;
 }
 
 sub p_string {
@@ -266,23 +263,18 @@ sub p_expression_incdec {
 
 sub p_expression_power {
   my $left_ref = p_expression_incdec();
-
-  if ($tok{type} ne 'operator' || $tok{match} ne '**') {
-    return $left_ref;
-  }
+  return $left_ref unless ($tok{type} eq 'operator' && $tok{match} eq '**');
 
   expect('operator');
 
-  my %node = %{p_node('power', $left_ref, p_expression_power())};
-  $node{operator} = '**';
+  my $node = p_node('power', $left_ref, p_expression_power());
+  $node->{operator} = '**';
 
-  return \%node;
+  return $node;
 }
 
 sub p_expression_high_precedence_unary {
-  if (!is_high_precedence_unary) {
-    return p_expression_power();
-  }
+  return p_expression_power() unless is_high_precedence_unary;
 
   my $unary = p_literal_op();
   return {
@@ -294,18 +286,15 @@ sub p_expression_high_precedence_unary {
 
 sub p_mul_expression {
   my $left_ref = p_expression_high_precedence_unary();
+  return $left_ref unless is_multiplicative;
 
-  if (!is_multiplicative) {
-    return $left_ref;
-  }
-
-  my %op = %{p_literal_op()};
+  my $op_ref = p_literal_op();
   my $right_ref = p_mul_expression();
 
-  my %node = %{p_node('mul_expr', $left_ref, $right_ref)};
-  $node{operator} = ${op}{value};
+  my $node = p_node('mul_expr', $left_ref, $right_ref);
+  $node->{operator} = $op_ref->{value};
 
-  return \%node;
+  return $node;
 }
 
 sub p_add_expression {
@@ -342,12 +331,10 @@ sub p_expression_bitwise_shift {
 
 sub p_expression_relational {
   my $left_ref = p_expression_bitwise_shift();
-  if (!is_relational) {
-    return $left_ref;
-  }
+  return $left_ref unless is_relational;
 
-  my $op = ${consume()}{match};
-  $op = $strop_to_cmpop{$op} // $op;
+  my $op = consume()->{match};
+  $op = $strop_to_cmpop{$op} || $op;
 
   return {
     'type' => 'comparison',
@@ -361,12 +348,10 @@ sub p_expression_relational {
 
 sub p_expression_equality {
   my $left_ref = p_expression_relational();
-  if (!is_equality) {
-    return $left_ref;
-  }
+  return $left_ref unless is_equality;
 
-  my $op = ${consume()}{match};
-  $op = $strop_to_cmpop{$op} // $op;
+  my $op = consume()->{match};
+  $op = $strop_to_cmpop{$op} || $op;
 
   return {
     'type' => 'comparison',
@@ -410,9 +395,7 @@ sub p_expression_bitwise_ors {
 
 sub p_expression_logical_and {
   my $left_ref = p_expression_bitwise_ors();
-  if ($tok{type} ne 'and') {
-    return $left_ref;
-  }
+  return $left_ref unless $tok{type} eq 'and';
 
   expect('and');
   my $right_ref = p_expression_logical_and();
@@ -426,9 +409,7 @@ sub p_expression_logical_and {
 
 sub p_expression_logical_or {
   my $left_ref = p_expression_logical_and();
-  if ($tok{type} ne 'or') {
-    return $left_ref;
-  }
+  return $left_ref unless $tok{type} eq 'or';
 
   expect('or');
   my $right_ref = p_expression_logical_or();
@@ -442,7 +423,7 @@ sub p_expression_logical_or {
 
 sub p_expression_range {
   my $left_ref = p_expression_logical_or();
-  return $left_ref if $tok{type} ne 'range';
+  return $left_ref unless $tok{type} eq 'range';
 
   expect('range');
   my $right_ref = p_expression_logical_or();
@@ -461,9 +442,7 @@ sub p_expression_range {
 
 sub p_expression_assignment {
   my $left_ref = p_expression_range();
-  if ($tok{type} ne 'assignment') {
-    return $left_ref;
-  }
+  return $left_ref unless $tok{type} eq 'assignment';
 
   # Extract the operator from *=, +=, etc.
   my $op = (length($tok{match}) == 2) ? substr($tok{match}, 0, 1) : undef;
@@ -532,9 +511,7 @@ sub p_expression_rightward_list_op {
 }
 
 sub p_expression_low_precedence_logical_not {
-  if ($tok{type} ne 'not') {
-    return p_expression_rightward_list_op();
-  }
+  return p_expression_rightward_list_op() unless $tok{type} eq 'not';
 
   expect('lp-not');
 
@@ -549,9 +526,7 @@ sub p_expression_low_precedence_logical_not {
 
 sub p_expression_low_precedence_logical_and {
   my $left_ref = p_expression_low_precedence_logical_not();
-  if ($tok{type} ne 'lp-and') {
-    return $left_ref;
-  }
+  return $left_ref unless $tok{type} eq 'lp-and';
 
   expect('lp-and');
 
@@ -567,23 +542,15 @@ sub p_expression_low_precedence_logical_and {
 
 sub p_expression_low_precedence_logical_ors {
   my $left_ref = p_expression_low_precedence_logical_and();
-  my @ops = qw(lp-or lp-xor);
-
-  if (!($tok{type} ~~ @ops)) {
-    return $left_ref;
-  }
-
-  my $op = substr ${consume()}{type}, 3;  # drop the "lp-"
-
-  my @cld = (
-    $left_ref,
-    p_expression_low_precedence_logical_ors(),
-  );
+  return $left_ref unless is_low_prec_logical_ors;
 
   return {
     'type' => 'logical',
-    'operator' => $op,
-    'cld' => \@cld,
+    'operator' => substr(${consume()}{type}, 3),  # drop the "lp-"
+    'cld' => [
+      $left_ref,
+      p_expression_low_precedence_logical_ors(),
+    ],
   };
 }
 
@@ -652,22 +619,20 @@ sub p_expression_start {
 }
 
 sub p_body_expression {
-  my @cld = ();
-  my %node = (
+  my $node = {
     'type' => 'body',
-    'cld' => \@cld,
-  );
+    'cld' => [],
+  };
 
   expect('blockbegin');
 
   while ($tok{type} ne 'blockend') {
-    my $node_ref = p_statement();
-    push @cld, $node_ref;
+    push $node->{cld}, p_statement();
   }
 
   expect('blockend');
 
-  return \%node;
+  return $node;
 }
 
 sub p_if_expression {
@@ -686,16 +651,10 @@ sub p_if_expression_internal {
   } elsif ($tok{type} eq 'keyword' && $tok{match} eq 'elsif') {
     expect('keyword');
 
-    my $nested = p_if_expression_internal();
-
-    my @ffs = ($nested);
-
-    my %elsif = (
+    $if_false = {
       'type' => 'body',
-      'cld' => \@ffs,
-    );
-
-    $if_false = \%elsif;
+      'cld' => [ p_if_expression_internal() ],
+    };
   }
 
   return p_node('if_expr', $condition_ref, $if_true, $if_false);
@@ -729,42 +688,36 @@ sub p_foreach_expression {
   expect('keyword');
 
   my $iterator_ref = p_scalar();
-  my $range_ref = p_expression();
-  my $body_ref = p_body_expression();
-
-  return p_node('foreach_expr', $iterator_ref, $range_ref, $body_ref);
+  return p_node('foreach_expr',
+      $iterator_ref,
+      p_expression(),
+      p_body_expression());
 }
 
 sub p_statement {
   my $result_ref = p_expression_start();
 
-  if ($tok{type} eq 'semicolon') {
-    expect('semicolon');
-  }
+  consume if $tok{type} eq 'semicolon';
 
-  if (defined($result_ref)) {
-    return $result_ref;
-  }
-
-  die "statement: not sure what to do with this: ", Dumper(\%tok);
+  return $result_ref if defined $result_ref;
+  die "statement: got undef as result of parsing; tokens: ", Dumper(\%tok);
 }
 
 sub p_program {
-  my @cld = ();
-  my %node = (
+  my $node = {
     'type' => 'program',
-    'cld' => \@cld,
-  );
+    'cld' => [],
+  };
 
   while ($tok{type} ne 'eof') {
     if ($tok{type} eq 'comment') {
-      push @cld, p_comment();
+      push $node->{cld}, p_comment();
     } else {
-      push @cld, p_statement();
+      push $node->{cld}, p_statement();
     }
   }
 
-  return \%node;
+  return $node;
 }
 
 
@@ -774,11 +727,11 @@ sub parse {
 
   # display(\@all_tokens);
 
-  my %tree = %{p_program()};
-  # display(\%tree);
+  my $tree = p_program();
+  # display($tree);
   print "## Parsed!\n";
 
-  return \%tree;
+  return $tree;
 }
 
 1;
