@@ -12,8 +12,7 @@ my $pat_kw = join '|', qw(
 );
 
 my $pat_comparisons = join '|', qw(<= >= == != < >);
-
-my $pat_operators = join '|', qw(\+ - \*\* / % \* x \.); # TODO add logicals
+my $pat_operators = join '|', qw(\+ - \*\* / % \* x \.);
 
 my @patterns = (
   { 'type' => 'comment',    're' => qr(#.*\n), 'chomp' => 1 },
@@ -65,32 +64,17 @@ my @patterns = (
   { 'type' => 'word',       're' => qr([^$pat_space$pat_special]+) },
 );
 
-sub is_terminal_token_type {
-  my $type = shift;
-  my @terminals = qw(semicolon comment);
-
-  return ($type ~~ @terminals);
-}
-
 sub get_next_token {
-  my $data = shift;
-  my $match = undef;
-  my $tok_type = undef;
-  my $ignore = 0;
-  my $chomp = 0;
+  my ($data, $match, $tok_type, $ignore, $chomp) = (shift, undef, undef, 0, 0);
 
-  foreach my $pattern__ (@patterns) {
-    my %pattern = %$pattern__;
-
-    my $repat = $pattern{re};
-    $repat = "^($repat)";
-    my $re = qr($repat);
+  foreach my $pattern (@patterns) {
+    my $re = qr(^($pattern->{re}));  # Only match tokens at start of the line
 
     if ($data =~ $re) {
       $match = $1;
-      $tok_type = $pattern{type};
-      $ignore = $pattern{ignore};
-      $chomp = $pattern{chomp};
+      $tok_type = $pattern->{type};
+      $ignore = $pattern->{ignore};
+      $chomp = $pattern->{chomp};
 
       last;
     }
@@ -101,12 +85,9 @@ sub get_next_token {
     die 'Fix your grammar';
   }
 
-  $data = substr($data, length $match);
+  $data = substr($data, length $match);  # Skip over the token just matched
 
-  if ($chomp) {
-    chomp $match;
-  }
-
+  chomp $match if $chomp;
   return ($match, $tok_type, $data, $ignore);
 }
 
@@ -118,20 +99,13 @@ sub lex {
     my ($match, $tok_type, $ignore);
     ($match, $tok_type, $data, $ignore) = get_next_token($data);
 
-    if ($ignore) {
-      next;
-    }
-
     push @tokens, {
         'match' => $match,
         'type'  => $tok_type,
-    };
-
-    # printf("%12s: %s\n", $tok_type, $match);
+    } unless $ignore;
   }
 
-  my %eof = ( 'type' => 'eof' );
-  push @tokens, \%eof;
+  push @tokens, { 'type' => 'eof' };
 
   return \@tokens;
 }
