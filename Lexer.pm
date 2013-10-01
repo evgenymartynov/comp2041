@@ -32,6 +32,8 @@ my @patterns = (
 
   { 'type' => 'range',      're' => '\.\.' },
 
+  { 'type' => 'bw-shift',   're' => qr(<<|>>) },
+
   { 'type' => 'comparison', 're' => $pat_comparisons },
   { 'type' => 'assignment', 're' => qr(($pat_operators)=) },
   { 'type' => 'assignment', 're' => '=' },
@@ -46,6 +48,11 @@ my @patterns = (
   { 'type' => 'not',        're' => qr(!) },
   { 'type' => 'and',        're' => qr(\&\&) },
   { 'type' => 'or',         're' => qr(\|\|) },
+
+  { 'type' => 'operator',   're' => qr(~) },
+  { 'type' => 'bw-and',     're' => qr(&) },
+  { 'type' => 'bw-or',      're' => qr(\|) },
+  { 'type' => 'bw-xor',     're' => qr(\^) },
 
   { 'type' => 'lp-not',     're' => qr(\bnot\b) },
   { 'type' => 'lp-and',     're' => qr(\band\b) },

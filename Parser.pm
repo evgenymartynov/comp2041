@@ -76,6 +76,21 @@ sub is_multiplicative {
   return $tok{type} eq 'operator' && $tok{match} ~~ @muliplicatives;
 }
 
+sub is_bitwise_shift {
+  my @ops = qw(<< >>);
+  return $tok{type} eq 'bw-shift' && $tok{match} ~~ @ops;
+}
+
+sub is_bitwise_and {
+  my @ops = qw(&);
+  return $tok{type} eq 'bw-and' && $tok{match} ~~ @ops;
+}
+
+sub is_bitwise_ors {
+  my @ops = qw(^ |);
+  return substr($tok{type}, 0, 3) eq 'bw-' && $tok{match} ~~ @ops;
+}
+
 sub is_incdec {
   my @ops = qw(++ --);
   return $tok{type} eq 'operator' && $tok{match} ~~ @ops;
@@ -332,49 +347,25 @@ sub p_add_expression {
   }
 }
 
-sub p_comparison_expression {
-  my $left_ref = p_add_expression();
+sub p_expression_bitwise_shift {
+  my @cld = ( p_add_expression() );
 
-  if ($tok{type} ne 'comparison') {
-    return $left_ref;
+  while (is_bitwise_shift) {
+    push @cld, p_literal_op();
+    push @cld, p_add_expression();
   }
 
-  my %op = %{p_literal_comparison()};
-  my $right_ref = p_mul_expression();
-
-  my %node = %{p_node('comparison', $left_ref, $right_ref)};
-  $node{operator} = ${op}{value};
-
-  return \%node;
-}
-
-sub p_range_expression {
-  my $left_ref = p_comparison_expression();
-
-  if ($tok{type} ne 'range') {
-    return $left_ref;
+  if ($#cld > 1) {
+    return p_node('foldl', @cld);
+  } else {
+    return $cld[0];
   }
-
-  expect('range');
-  my $right_incl_ref = p_comparison_expression();
-
-  # Fix up incl/excl ranges
-  my $right_excl_ref = p_node('add_expr', $right_incl_ref, p_node_with_value('number', '1'));
-  ${$right_excl_ref}{operator} = '+';
-
-  return p_node('range', $left_ref, $right_excl_ref);
 }
 
-sub p_expression_todo {
-  if ($tok{type} eq 'string') {
-    return p_string();
-  }
-
-  return p_range_expression();
-}
+# TODO named unary operators
 
 sub p_expression_relational {
-  my $left_ref = p_expression_todo();
+  my $left_ref = p_expression_bitwise_shift();
   if (!is_relational) {
     return $left_ref;
   }
@@ -387,7 +378,7 @@ sub p_expression_relational {
     'operator' => $op,
     'cld' => [
       $left_ref,
-      p_expression_todo(),
+      p_expression_bitwise_shift(),
     ]
   };
 }
@@ -411,18 +402,38 @@ sub p_expression_equality {
   };
 }
 
-sub p_expression_TODO {
-  return p_expression_equality();
+sub p_expression_bitwise_and {
+  my @cld = ( p_expression_equality() );
+
+  while (is_bitwise_and) {
+    push @cld, p_literal_op();
+    push @cld, p_expression_equality();
+  }
+
+  if ($#cld > 1) {
+    return p_node('foldl', @cld);
+  } else {
+    return $cld[0];
+  }
 }
 
-# Additive, concat.
+sub p_expression_bitwise_ors {
+  my @cld = ( p_expression_bitwise_and() );
 
-# Comparisons go here.
+  while (is_bitwise_ors) {
+    push @cld, p_literal_op();
+    push @cld, p_expression_bitwise_and();
+  }
 
-# *Named* unaries.
+  if ($#cld > 1) {
+    return p_node('foldl', @cld);
+  } else {
+    return $cld[0];
+  }
+}
 
 sub p_expression_logical_and {
-  my $left_ref = p_expression_TODO();
+  my $left_ref = p_expression_bitwise_ors();
   if ($tok{type} ne 'and') {
     return $left_ref;
   }
