@@ -2,8 +2,6 @@ package Parser;
 
 use strict;
 use Data::Dumper;
-use Switch;
-
 use feature qw(switch);
 
 our (@all_tokens, %tok, %strop_to_cmpop);
@@ -216,11 +214,11 @@ sub p_comment {
 }
 
 sub p_simple_value {
-  switch ($tok{type}) {
-    case 'string'     { return p_string();         }
-    case 'number'     { return p_literal_number(); }
-    case 'scalar'     { return p_scalar();         }
-    case 'parenbegin' { return p_expression_start(); }
+  given ($tok{type}) {
+    when ('string')     { return p_string();         }
+    when ('number')     { return p_literal_number(); }
+    when ('scalar')     { return p_scalar();         }
+    when ('parenbegin') { return p_expression_start(); }
 
     default           {
       display(\@all_tokens);

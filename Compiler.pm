@@ -2,7 +2,6 @@ package Compiler;
 
 use strict;
 use Data::Dumper;
-use Switch;
 use feature qw(switch);
 
 our (%cs, %emitter_state, %emitter_stack);
@@ -437,47 +436,47 @@ sub compile_node {
 
   $cs{node_depth}++;
 
-  switch ($node{type}) {
-    case 'program'          { compile_program         (\%node); }
-    case 'body'             { compile_body            (\%node); }
+  given ($node{type}) {
+    when ('program')          { compile_program         (\%node); }
+    when ('body')             { compile_body            (\%node); }
 
-    case 'comment'          { compile_comment         (\%node); }
-    case 'number'           { compile_number          (\%node); }
-    case 'string'           { compile_string          (\%node); }
-    case 'scalar'           { compile_scalar          (\%node); }
-    case 'range'            { compile_range           (\%node); }
+    when ('comment')          { compile_comment         (\%node); }
+    when ('number')           { compile_number          (\%node); }
+    when ('string')           { compile_string          (\%node); }
+    when ('scalar')           { compile_scalar          (\%node); }
+    when ('range')            { compile_range           (\%node); }
 
-    case 'incdec'           { compile_incdec          (\%node) }
+    when ('incdec')           { compile_incdec          (\%node) }
 
-    case 'comma'            { compile_comma           (\%node); }
+    when ('comma')            { compile_comma           (\%node); }
 
-    case 'foldl'            { compile_foldl           (\%node); }
-    case 'unary'            { compile_unary           (\%node); }
+    when ('foldl')            { compile_foldl           (\%node); }
+    when ('unary')            { compile_unary           (\%node); }
 
-    case 'assignment'       { compile_assignment      (\%node); }
-    case 'add_expr'         { compile_binary_op_expr  (\%node); }
-    case 'mul_expr'         { compile_binary_op_expr  (\%node); }
-    case 'logical'          { compile_binary_op_expr  (\%node); }
-    case 'power'            { compile_binary_op_expr  (\%node); }
-    case 'comparison'       { compile_binary_op_expr  (\%node); }
-    case 'comma_sep_expr'   { compile_comma_sep_expr  (\%node); }
+    when ('assignment')       { compile_assignment      (\%node); }
+    when ('add_expr')         { compile_binary_op_expr  (\%node); }
+    when ('mul_expr')         { compile_binary_op_expr  (\%node); }
+    when ('logical')          { compile_binary_op_expr  (\%node); }
+    when ('power')            { compile_binary_op_expr  (\%node); }
+    when ('comparison')       { compile_binary_op_expr  (\%node); }
+    when ('comma_sep_expr')   { compile_comma_sep_expr  (\%node); }
 
-    case 'call'             { compile_call            (\%node); }
+    when ('call')             { compile_call            (\%node); }
 
-    case 'if_expr'          { compile_if              (\%node); }
-    case 'while_expr'       { compile_while           (\%node); }
-    case 'for_expr'         { compile_for             (\%node); }
-    case 'foreach_expr'     { compile_foreach         (\%node); }
+    when ('if_expr')          { compile_if              (\%node); }
+    when ('while_expr')       { compile_while           (\%node); }
+    when ('for_expr')         { compile_for             (\%node); }
+    when ('foreach_expr')     { compile_foreach         (\%node); }
 
-    case 'loop_control'     { compile_loopcontrol     (\%node); }
+    when ('loop_control')     { compile_loopcontrol     (\%node); }
 
-    case 'parenthesise'     { compile_parenthesise    (\%node); }
+    when ('parenthesise')     { compile_parenthesise    (\%node); }
 
-    case 'file_read'        { compile_fileread        (\%node); }
+    when ('file_read')        { compile_fileread        (\%node); }
 
     # I hate perl at times. More so than the other times when I want to kill it.
-    case 'comma_sep_string_concat' { compile_comma_sep_string_concat(\%node); }
-    case 'stringify'        { compile_stringify       (\%node); }
+    when ('comma_sep_string_concat') { compile_comma_sep_string_concat(\%node); }
+    when ('stringify')        { compile_stringify       (\%node); }
 
     default           {
       print "What are you doing? Got this: ";
