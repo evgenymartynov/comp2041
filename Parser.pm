@@ -111,19 +111,6 @@ sub p_leafget {
   return p_leaf($type, expect($type));
 }
 
-
-sub p_template {
-  my @cld = ();
-  my %node = (
-    'type' => 'templ',
-    'cld' => \@cld,
-  );
-
-
-  return \%node;
-}
-
-
 sub p_node {
   my $type = shift;
   my @cld = @_;
@@ -223,7 +210,7 @@ sub p_literal_assignment {
 
 sub p_literal_op {
   my $op = $tok{match};
-  my $ref = p_leafget('operator');
+  my $ref = p_leaf('operator', consume());
   $ref->{operator} = $op;
   return $ref;
 }
@@ -238,11 +225,11 @@ sub p_comment {
 
 sub p_simple_value {
   switch ($tok{type}) {
+    case 'string'     { return p_string();         }
     case 'number'     { return p_literal_number(); }
     case 'scalar'     { return p_scalar();         }
 
     default           {
-      display(\%tok);
       display(\@all_tokens);
       die "simple_value: not sure what to do with this: ", Dumper(\%tok);
     }
@@ -306,7 +293,7 @@ sub p_expression_high_precedence_unary {
     return p_expression_power();
   }
 
-  my $unary = consume();
+  my $unary = p_literal_op();
   return {
     'type' => 'unary',
     'operator' => $unary,
@@ -527,7 +514,7 @@ sub p_expression_rightward_list_op {
         return p_foreach_expression();
       }
 
-      when (['next', 'last']) {
+      when (['next', 'last']) {   # TODO these need to be moved to the proper spot
         return p_loopcontrol_expression();
       }
     }
@@ -654,14 +641,6 @@ sub p_print_statement {
 
   my $args = p_expression_funcargs();
   return p_emit_cheat($func, $args);
-}
-
-sub p_value {
-  if ($tok{type} eq 'scalar') {
-    return p_leafget('scalar');
-  } else {
-    return p_expression();
-  }
 }
 
 sub p_expression_start {

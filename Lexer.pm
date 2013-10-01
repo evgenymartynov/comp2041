@@ -13,7 +13,7 @@ my $pat_kw = join '|', qw(
 
 my $pat_comparisons = join '|', qw(<= >= == != < >);
 
-my $pat_operators = join '|', qw(\+ - \* / % \*\* x \.); # TODO add logicals
+my $pat_operators = join '|', qw(\+ - \*\* / % \* x \.); # TODO add logicals
 
 my @patterns = (
   { 'type' => 'comment',    're' => qr(#.*\n), 'chomp' => 1 },
