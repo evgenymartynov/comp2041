@@ -458,13 +458,21 @@ sub p_expression_assignment {
   };
 }
 
+sub p_expression_loopcontrol {
+  if ($tok{match} ~~ ['next', 'last']) {
+    return p_loopcontrol_expression();
+  } else {
+    return p_expression_assignment();
+  }
+}
+
 sub p_expression_comma {
-  my @cld = ( p_expression_assignment() );
+  my @cld = ( p_expression_loopcontrol() );
 
   while ($tok{type} eq 'comma') {
     expect('comma');
     push @cld, p_node('comma');
-    push @cld, p_expression_assignment();
+    push @cld, p_expression_loopcontrol();
   }
 
   return p_node('comma', @cld);
@@ -497,8 +505,6 @@ sub p_expression_rightward_list_op {
         return p_foreach_expression();
       }
 
-      when (['next', 'last']) {   # TODO these need to be moved to the proper spot
-        return p_loopcontrol_expression();
       }
     }
 
