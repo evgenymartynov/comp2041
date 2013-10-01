@@ -124,9 +124,9 @@ sub compile_range {
 sub compile_comma {
   my $node = shift;
   my @cld = @{$node->{cld}};
-  my $brackets = $#cld > 1;
+  # my $brackets = $#cld > 1;
 
-  emit_token('[') if $brackets;
+  # emit_token('[') if $brackets;
 
   foreach my $child (@cld) {
     given ($child->{type}) {
@@ -140,7 +140,7 @@ sub compile_comma {
     }
   }
 
-  emit_token(']') if $brackets;
+  # emit_token(']') if $brackets;
 }
 
 sub compile_incdec {
