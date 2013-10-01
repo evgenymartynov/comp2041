@@ -434,24 +434,8 @@ sub p_expression_TODO {
 
 # *Named* unaries.
 
-sub p_expression_logical_or {
-  my $left_ref = p_expression_TODO();
-  if ($tok{type} ne 'or') {
-    return $left_ref;
-  }
-
-  expect('or');
-  my $right_ref = p_expression_logical_or();
-
-  return {
-    'type' => 'logical',
-    'operator' => 'or',
-    'cld' => [ $left_ref, $right_ref ],
-  };
-}
-
 sub p_expression_logical_and {
-  my $left_ref = p_expression_logical_or();
+  my $left_ref = p_expression_TODO();
   if ($tok{type} ne 'and') {
     return $left_ref;
   }
@@ -466,10 +450,26 @@ sub p_expression_logical_and {
   };
 }
 
+sub p_expression_logical_or {
+  my $left_ref = p_expression_logical_and();
+  if ($tok{type} ne 'or') {
+    return $left_ref;
+  }
+
+  expect('or');
+  my $right_ref = p_expression_logical_or();
+
+  return {
+    'type' => 'logical',
+    'operator' => 'or',
+    'cld' => [ $left_ref, $right_ref ],
+  };
+}
+
 # Ternary, ranges , ..., go here.
 
 sub p_expression_assignment {
-  my $left_ref = p_expression_logical_and();
+  my $left_ref = p_expression_logical_or();
   if ($tok{type} ne 'assignment') {
     return $left_ref;
   }
