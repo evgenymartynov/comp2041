@@ -362,6 +362,20 @@ sub compile_foreach {
   compile_node($body_ref);
 }
 
+sub compile_loopcontrol {
+  my $node = shift;
+
+  given ($node->{value}) {
+    when ('next') {
+      emit_keyword('continue');
+    }
+
+    when ('last') {
+      emit_keyword('break');
+    }
+  }
+}
+
 sub compile_fileread {
   my %node = %{shift @_};
 
@@ -443,6 +457,8 @@ sub compile_node {
     case 'while_expr'       { compile_while           (\%node); }
     case 'for_expr'         { compile_for             (\%node); }
     case 'foreach_expr'     { compile_foreach         (\%node); }
+
+    case 'loop_control'     { compile_loopcontrol     (\%node); }
 
     case 'parenthesise'     { compile_parenthesise    (\%node); }
 

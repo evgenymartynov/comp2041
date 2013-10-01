@@ -500,6 +500,10 @@ sub p_expression_comma {
   return p_node('comma', @cld);
 }
 
+sub p_loopcontrol_expression {
+  return p_leaf('loop_control', expect('keyword'));
+}
+
 sub p_expression_rightward_list_op {
   if ($tok{type} eq 'keyword') {
     given ($tok{match}) {
@@ -521,6 +525,10 @@ sub p_expression_rightward_list_op {
 
       when ('foreach') {
         return p_foreach_expression();
+      }
+
+      when (['next', 'last']) {
+        return p_loopcontrol_expression();
       }
     }
 

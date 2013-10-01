@@ -8,6 +8,7 @@ my $pat_variable = "${pat_variable_first}0-9";
 my $pat_kw = join '|', qw(
     print printf shift undef
     if else elsif while for foreach
+    next last
 );
 
 my $pat_comparisons = join '|', qw(<= >= == != < >);
