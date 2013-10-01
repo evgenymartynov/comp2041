@@ -5,7 +5,11 @@ my $pat_space = " \t\n";
 my $pat_special = ",;'\"{}()";
 my $pat_variable_first = 'A-Za-z_';
 my $pat_variable = "${pat_variable_first}0-9";
-my $pat_kw = join '|', qw(print printf shift undef if else elsif while foreach);
+my $pat_kw = join '|', qw(
+    print printf shift undef
+    if else elsif while for foreach
+);
+
 my $pat_comparisons = join '|', qw(<= >= == != < >);
 
 my $pat_operators = join '|', qw(\+ - \* / % \*\* x \.); # TODO add logicals

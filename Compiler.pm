@@ -330,6 +330,24 @@ sub compile_while {
   compile_node($body_ref);
 }
 
+sub compile_for {
+  my %node = %{shift @_};
+
+  my ($init_ref, $cond_ref, $post_ref, $body_ref) = @{$node{cld}};
+  # TODO: run $post_ref on "continue"
+
+  compile_node($init_ref);
+  emit_statement_begin();
+
+  emit_keyword('while');
+  compile_node($cond_ref);
+
+  # TODO: make continue work
+  push $body_ref->{cld}, $post_ref;
+
+  compile_node($body_ref);
+}
+
 sub compile_foreach {
   my %node = %{shift @_};
 
@@ -423,6 +441,7 @@ sub compile_node {
 
     case 'if_expr'          { compile_if              (\%node); }
     case 'while_expr'       { compile_while           (\%node); }
+    case 'for_expr'         { compile_for             (\%node); }
     case 'foreach_expr'     { compile_foreach         (\%node); }
 
     case 'parenthesise'     { compile_parenthesise    (\%node); }

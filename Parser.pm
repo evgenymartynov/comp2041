@@ -515,6 +515,10 @@ sub p_expression_rightward_list_op {
         return p_while_expression();
       }
 
+      when ('for') {
+        return p_for_expression();
+      }
+
       when ('foreach') {
         return p_foreach_expression();
       }
@@ -713,6 +717,21 @@ sub p_while_expression {
   my $body_ref = p_body_expression();
 
   return p_node('while_expr', $condition_ref, $body_ref);
+}
+
+sub p_for_expression {
+  expect('keyword');
+  expect('parenbegin');
+
+  my @cld = ();
+  push @cld, p_expression_start(); expect('semicolon');
+  push @cld, p_expression_start(); expect('semicolon');
+  push @cld, p_expression_start();
+
+  expect('parenend');
+
+  my $body_ref = p_body_expression();
+  return p_node('for_expr', @cld, $body_ref);
 }
 
 sub p_foreach_expression {
