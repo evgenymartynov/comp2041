@@ -16,3 +16,4 @@ date:start:end:description
 12/09:0425:0455:Added range-based for-each loops. I think I can pass the Turing test, but am I a human?
 12/09:1500:1900:Did stuff to clean up the output. Probably overkill.
 17/09:2200:2240:Worked a bit on fixing op precedence and string comps
+01/10:1000:1100:Working on adding all the loops and loop controls. Added postfix ++/--.

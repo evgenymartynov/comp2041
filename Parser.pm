@@ -76,6 +76,11 @@ sub is_multiplicative {
   return $tok{type} eq 'operator' && $tok{match} ~~ @muliplicatives;
 }
 
+sub is_incdec {
+  my @ops = qw(++ --);
+  return $tok{type} eq 'operator' && $tok{match} ~~ @ops;
+}
+
 sub is_high_precedence_unary {
   my @ops = qw(! ~ \\ + -);
   return $tok{type} eq 'operator' && $tok{match} ~~ @ops;
@@ -244,8 +249,45 @@ sub p_simple_value {
   }
 }
 
+sub p_expression_incdec {
+  my $opref;
+
+  if (is_incdec) {
+    $opref = {
+      'type' => 'operator',
+      'operator' => $tok{match},
+      'cld' => [],
+      'prefix' => 1,
+    };
+    expect('operator');
+  }
+
+  my $node_ref = p_simple_value();
+
+  if (is_incdec) {
+    if (defined $opref) {
+      die 'Bad prefix/postfix operation: doing both at once';
+    }
+
+    $opref = {
+      'type' => 'incdec',
+      'operator' => $tok{match},
+      'cld' => [],
+      'postfix' => 1,
+    };
+    expect('operator');
+  }
+
+  if (defined $opref) {
+    push $opref->{cld}, $node_ref;
+    return $opref;
+  }
+
+  return $node_ref;
+}
+
 sub p_expression_power {
-  my $left_ref = p_simple_value();
+  my $left_ref = p_expression_incdec();
 
   if ($tok{type} ne 'operator' || $tok{match} ne '**') {
     return $left_ref;

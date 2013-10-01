@@ -143,6 +143,11 @@ sub compile_comma {
   emit_token(']') if $brackets;
 }
 
+sub compile_incdec {
+  my $node = shift;
+  push $cs{postfix_incdec}, [ $cs{node_depth}, $node ];
+}
+
 sub compile_stringify {
   my %node = %{shift @_};
 
@@ -388,6 +393,8 @@ sub compile_program {
 sub compile_node {
   my %node = %{shift @_};
 
+  $cs{node_depth}++;
+
   switch ($node{type}) {
     case 'program'          { compile_program         (\%node); }
     case 'body'             { compile_body            (\%node); }
@@ -397,6 +404,8 @@ sub compile_node {
     case 'string'           { compile_string          (\%node); }
     case 'scalar'           { compile_scalar          (\%node); }
     case 'range'            { compile_range           (\%node); }
+
+    case 'incdec'           { compile_incdec          (\%node) }
 
     case 'comma'            { compile_comma           (\%node); }
 
@@ -430,12 +439,30 @@ sub compile_node {
       die;
     }
   }
+
+  my $replacement = [];
+  foreach my $ref (@{$cs{postfix_incdec}}) {
+    if ($ref->[0] == $cs{node_depth}) {
+      compile_node($ref->[1]->{cld}->[0]);
+
+      my $op = substr $ref->[1]->{operator}, 0, 1;
+      emit_token($op . '=');
+      emit_constant('1');
+    } else {
+      push $replacement, $ref;
+    }
+  }
+  $cs{postfix_incdec} = $replacement;
+
+  $cs{node_depth}--;
 }
 
 sub compile {
   my $ast_ref = shift;
   %cs = (
     'depth' => 0,
+    'node_depth' => 0,
+    'postfix_incdec' => [],
   );
 
   %emitter_state = (
