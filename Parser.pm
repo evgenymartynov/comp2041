@@ -49,6 +49,10 @@ sub p_parenthesise {
   return p_node('parenthesise', @_);
 }
 
+sub p_stringify {
+  return p_node('stringify', shift);
+}
+
 sub p_emit_cheat {
   my ($p2p_builtin, @args) = @_;
   my $ref = p_node('call', @args);
@@ -99,17 +103,6 @@ sub is_incdec {
 sub is_high_precedence_unary {
   my @ops = qw(! ~ \\ + -);
   return $tok{type} eq 'operator' && $tok{match} ~~ @ops;
-}
-
-sub is_assignment {
-  my @assignments = qw(=);
-  return $tok{type} eq 'assignment' && $tok{match} ~~ @assignments;
-}
-
-sub is_string_type {
-  my $type = shift;
-  my @string_types = qw(comma_sep_string_concat string);
-  return $type ~~ @string_types;
 }
 
 sub p_leaf {
@@ -199,28 +192,16 @@ sub interpolate_string {
 }
 
 sub p_string {
-  my %tok = %{expect('string')};
-  return interpolate_string(\%tok);
+  my $tok = expect('string');
+  return interpolate_string($tok);
 }
 
 sub p_scalar {
   return p_leafget('scalar');
 }
 
-sub p_file_descriptor_caps {
-  return p_leafget('filedes');
-}
-
-sub p_file_descriptor {
-  return $tok{type} eq 'scalar' ? p_scalar() : p_file_descriptor_caps();
-}
-
 sub p_literal_number {
   return p_leafget('number');
-}
-
-sub p_literal_assignment {
-  return p_leafget('assignment');
 }
 
 sub p_literal_op {
@@ -228,10 +209,6 @@ sub p_literal_op {
   my $ref = p_leaf('operator', consume());
   $ref->{operator} = $op;
   return $ref;
-}
-
-sub p_literal_comparison {
-  return p_leafget('comparison');
 }
 
 sub p_comment {
@@ -614,10 +591,6 @@ sub p_expression {
       push @cld, $expression_ref;
     }
 
-    when ('comparison' && $tok{match} eq '<') {
-      return p_file_read();
-    }
-
     default {
       display(\%tok);
       display(\@all_tokens);
@@ -626,10 +599,6 @@ sub p_expression {
   }
 
   return $cld[0];
-}
-
-sub p_stringify {
-  return p_node('stringify', shift);
 }
 
 sub p_expression_funcargs_inner {
@@ -740,34 +709,6 @@ sub p_foreach_expression {
   my $body_ref = p_body_expression();
 
   return p_node('foreach_expr', $iterator_ref, $range_ref, $body_ref);
-}
-
-sub p_file_read {
-  my @cld = ();
-  my %node = (
-    'type' => 'file_read',
-    'cld' => \@cld,
-  );
-
-  if ($tok{match} ne '<') {
-      display(\%tok);
-      display(\@all_tokens);
-      die "p_file_read: not sure what to do with this: ", Dumper(\%tok);
-  }
-  expect('comparison');
-
-  if ($tok{type} ne 'comparison') {
-    push @cld, p_file_descriptor();
-  }
-
-  if ($tok{match} ne '>') {
-      display(\%tok);
-      display(\@all_tokens);
-      die "p_file_read: not sure what to do with this: ", Dumper(\%tok);
-  }
-  expect('comparison');
-
-  return \%node;
 }
 
 sub p_statement {
