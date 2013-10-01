@@ -2,5 +2,5 @@
 
 for f in examples/*.pl; do
   echo "Doing $f"
-  diff -q <(./perl2python "$f" | python) <(perl "$f")
+  diff -q <(python <(./perl2python "$f") < /dev/null) <(perl "$f" < /dev/null)
 done
