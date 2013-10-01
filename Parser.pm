@@ -442,10 +442,27 @@ sub p_expression_logical_or {
   };
 }
 
-# Ternary, ranges , ..., go here.
+sub p_expression_range {
+  my $left_ref = p_expression_logical_or();
+  return $left_ref if $tok{type} ne 'range';
+
+  expect('range');
+  my $right_ref = p_expression_logical_or();
+
+  # Fix up inclusive/exclusive ranges
+  $right_ref = p_node('add_expr', $right_ref, p_node_with_value('number', '1'));
+  $right_ref->{operator} = '+';
+
+  return {
+    'type' => 'range',
+    'cld' => [ $left_ref, $right_ref ],
+  };
+}
+
+# Ternaries go here
 
 sub p_expression_assignment {
-  my $left_ref = p_expression_logical_or();
+  my $left_ref = p_expression_range();
   if ($tok{type} ne 'assignment') {
     return $left_ref;
   }
