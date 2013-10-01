@@ -286,6 +286,16 @@ sub compile_foldl {
   }
 }
 
+sub compile_unary {
+  my $node = shift @_;
+  my $ref = $node->{cld}->[0];
+
+  emit_token($node->{operator}->{value});
+  emit_token('(');
+  compile_node($ref);
+  emit_token(')');
+}
+
 sub compile_binary_op_expr {
   my %node = %{shift @_};
 
@@ -442,6 +452,7 @@ sub compile_node {
     case 'comma'            { compile_comma           (\%node); }
 
     case 'foldl'            { compile_foldl           (\%node); }
+    case 'unary'            { compile_unary           (\%node); }
 
     case 'assignment'       { compile_assignment      (\%node); }
     case 'add_expr'         { compile_binary_op_expr  (\%node); }
