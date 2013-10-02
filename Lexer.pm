@@ -6,10 +6,13 @@ my $pat_special = ",;'\"{}()";
 my $pat_variable_first = 'A-Za-z_';
 my $pat_variable = "${pat_variable_first}0-9";
 my $pat_kw = join '|', qw(
-    print printf shift undef
+    print printf
     if else elsif while for foreach
     next last
 );
+
+my $pat_named_unaries = join '|', qw(chomp);
+my $pat_list_operators = join '|', qw(split join);
 
 my $pat_comparisons = join '|', qw(<= >= == != < >);
 my $pat_operators = join '|', qw(\+ - \*\* / % \* x \.);
@@ -28,6 +31,8 @@ my @patterns = (
   { 'type' => 'parenend',   're' => '\)' },
 
   { 'type' => 'keyword',    're' => qr(\b($pat_kw)\b) },
+  { 'type' => 'named_unary','re' => qr(\b($pat_named_unaries)\b) },
+  { 'type' => 'list_op',    're' => qr(\b($pat_list_operators)\b) },
 
   { 'type' => 'range',      're' => '\.\.' },
 

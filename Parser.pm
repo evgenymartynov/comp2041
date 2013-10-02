@@ -80,6 +80,11 @@ sub is_multiplicative {
   return $tok{type} eq 'operator' && $tok{match} ~~ @ops;
 }
 
+sub is_named_unary {
+  my @ops = qw(chomp);
+  return $tok{match} ~~ @ops;
+}
+
 sub is_bitwise_shift {
   my @ops = qw(<< >>);
   return $tok{type} eq 'bw-shift' && $tok{match} ~~ @ops;
@@ -210,12 +215,20 @@ sub p_comment {
   return p_leafget('comment');
 }
 
+sub p_func_call {
+  my $func = $tok{match};
+  consume();
+
+  return p_emit_cheat($func, p_expression_funcargs());
+}
+
 sub p_simple_value {
   given ($tok{type}) {
     when ('string')     { return p_string();         }
     when ('number')     { return p_literal_number(); }
     when ('scalar')     { return p_scalar();         }
     when ('parenbegin') { return p_expression_start(); }
+    when ('list_op')    { return p_func_call(); }
 
     default           {
       display(\@all_tokens);
@@ -327,10 +340,22 @@ sub p_expression_bitwise_shift {
   }
 }
 
-# TODO named unary operators
+sub p_expression_named_unary {
+  return p_expression_bitwise_shift unless is_named_unary;
+
+  my $func = $tok{match};
+  expect('named_unary');
+  my $arg = p_expression_bitwise_shift();
+
+  if ($func eq 'chomp') {
+    return p_node('assignment', $arg, p_emit_cheat($func, $arg));
+  }
+
+  return p_emit_cheat($func, $arg);
+}
 
 sub p_expression_relational {
-  my $left_ref = p_expression_bitwise_shift();
+  my $left_ref = p_expression_named_unary();
   return $left_ref unless is_relational;
 
   my $op = consume()->{match};
@@ -341,7 +366,7 @@ sub p_expression_relational {
     'operator' => $op,
     'cld' => [
       $left_ref,
-      p_expression_bitwise_shift(),
+      p_expression_named_unary(),
     ]
   };
 }
@@ -504,14 +529,11 @@ sub p_expression_rightward_list_op {
       when ('foreach') {
         return p_foreach_expression();
       }
-
-      default {
-        die 'unknown keyword when parsing rightward list ops ', Dumper(\%tok);
-      }
     }
-  } else {
-    return p_expression_comma();
   }
+
+  # Default case
+  return p_expression_comma();
 }
 
 sub p_expression_low_precedence_logical_not {
