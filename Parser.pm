@@ -580,36 +580,6 @@ sub p_expression_low_precedence_logical_ors {
   };
 }
 
-sub p_expression {
-  my @cld = ();
-  my %node = (
-    'type' => 'expression',
-    'cld' => \@cld,
-  );
-
-  given ($tok{type}) {
-    when (['string', 'number', 'scalar']) {
-      push @cld, p_expression_low_precedence_logical_ors();
-    }
-
-    when ('parenbegin') {
-      expect('parenbegin');
-      my $expression_ref = p_expression();
-      expect('parenend');
-
-      push @cld, $expression_ref;
-    }
-
-    default {
-      display(\%tok);
-      display(\@all_tokens);
-      die ${node}{type} . ": not sure what to do with this: ", Dumper(\%tok);
-    }
-  }
-
-  return $cld[0];
-}
-
 sub p_expression_funcargs_inner {
   return p_expression_comma();
 }
@@ -667,7 +637,7 @@ sub p_if_expression {
 }
 
 sub p_if_expression_internal {
-  my $condition_ref = p_expression();
+  my $condition_ref = p_expression_start();
   my $if_true = p_body_expression();
   my $if_false = undef;
 
@@ -689,7 +659,7 @@ sub p_if_expression_internal {
 sub p_while_expression {
   expect('keyword');
 
-  my $condition_ref = p_expression();
+  my $condition_ref = p_expression_start();
   my $body_ref = p_body_expression();
 
   return p_node('while_expr', $condition_ref, $body_ref);
@@ -713,10 +683,10 @@ sub p_for_expression {
 sub p_foreach_expression {
   expect('keyword');
 
-  my $iterator_ref = p_scalar();
+  my $iterator_ref = p_variable();
   return p_node('foreach_expr',
       $iterator_ref,
-      p_expression(),
+      p_expression_start(),
       p_body_expression());
 }
 
