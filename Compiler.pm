@@ -47,6 +47,45 @@ sub emit_node_value {
 
 
 #
+# Type coercers... because perl sucks and you know it.
+#
+
+sub get_coercer {
+  my $op = shift;
+  my @numeric = qw(+ - * / % ** == != < > <= >=);
+  my @strings = qw(. x eq ne lt gt le ge);
+
+  if ($op ~~ @numeric) {
+    return \&coercer_int;
+  } elsif ($op ~~ @strings) {
+    return \&coercer_str;
+  } else {
+    return \&coercer_id;
+  }
+}
+
+sub coercer_id {
+  return @_;
+}
+
+sub coercer_int {
+  my $ref = shift;
+  return ($ref->{type} eq 'number' ? $ref : {
+    'type' => 'integrify',
+    'cld' => [ $ref ],
+  });
+}
+
+sub coercer_str {
+  my $ref = shift;
+  return ($ref->{type} eq 'string' ? $ref : {
+    'type' => 'stringify',
+    'cld' => [ $ref ],
+  });
+}
+
+
+#
 # Compiler
 #
 
@@ -70,6 +109,12 @@ sub lookup_operator {
 
   my $op = shift;
   return $translations{$op} || $op;
+}
+
+sub convert_op {
+  my $op = shift;
+  my %ops = qw(. + x * eq == ne != lt < gt > le <= ge >=);
+  return $ops{$op} || $op;
 }
 
 sub compile_comment {
@@ -219,15 +264,18 @@ sub compile_parenthesise {
 
 sub compile_foldl {
   my $node = shift @_;
+  my @cld = @{$node->{cld}};
 
-  foreach my $item (@{$node->{cld}}) {
+  my $coercer = ($#cld ? get_coercer($cld[1]->{operator}) : &coercer_id);
+
+  foreach my $item (@cld) {
     given ($item->{type}) {
       when ('operator') {
         emit_token($item->{operator});
       }
 
       default {
-        compile_node($item);
+        compile_node($coercer->($item));
       }
     }
   }
@@ -247,13 +295,14 @@ sub compile_binary_op_expr {
   my $node = shift;
   my $lop_ref = shift $node->{cld};
   my $rop_ref = shift $node->{cld};
+  my $coercer = get_coercer($node->{operator});
 
   emit_token('(');
-  compile_node($lop_ref);
+  compile_node($coercer->($lop_ref));
 
   while (defined($rop_ref)) {
-    emit_token($node->{operator});
-    compile_node($rop_ref);
+    emit_token(convert_op($node->{operator}));
+    compile_node($coercer->($rop_ref));
 
     $rop_ref = shift $node->{cld};
   }
@@ -386,7 +435,6 @@ sub compile_node {
 
     when ('assignment')       { compile_assignment      ($node); }
     when ('add_expr')         { compile_binary_op_expr  ($node); }
-    when ('mul_expr')         { compile_binary_op_expr  ($node); }
     when ('logical')          { compile_binary_op_expr  ($node); }
     when ('power')            { compile_binary_op_expr  ($node); }
     when ('comparison')       { compile_binary_op_expr  ($node); }

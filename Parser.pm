@@ -4,16 +4,7 @@ use strict;
 use Data::Dumper;
 use feature qw(switch);
 
-our (@all_tokens, %tok, %strop_to_cmpop);
-
-%strop_to_cmpop = (
-  'eq' => '==',
-  'ne' => '!=',
-  'lt' => '<',
-  'le' => '<=',
-  'gt' => '>',
-  'ge' => '>=',
-);
+our (@all_tokens, %tok);
 
 sub display {
   local $Data::Dumper::Terse = 1;
@@ -51,26 +42,6 @@ sub p_parenthesise {
 
 sub p_stringify {
   return p_node('stringify', shift);
-}
-
-sub p_integrify {
-  return p_node('integrify', shift);
-}
-
-sub p_coerce_str {
-  my @coerced = ();
-  foreach my $ref (@_) {
-    push @coerced, ($ref->{type} eq 'string' ? $ref : p_stringify($ref));
-  }
-  return @coerced;
-}
-
-sub p_coerce_int {
-  my @coerced = ();
-  foreach my $ref (@_) {
-    push @coerced, ($ref->{type} eq 'number' ? $ref : p_integrify($ref));
-  }
-  return @coerced;
 }
 
 sub p_emit_cheat {
@@ -342,18 +313,18 @@ sub p_expression_high_precedence_unary {
 }
 
 sub p_mul_expression {
-  my $left_ref = p_expression_high_precedence_unary();
-  return $left_ref unless is_multiplicative;
+  my @cld = ( p_expression_high_precedence_unary() );
 
-  my $op_ref = p_literal_op();
-  my $right_ref = p_mul_expression();
+  while (is_multiplicative) {
+    push @cld, p_literal_op();
+    push @cld, p_expression_high_precedence_unary();
+  }
 
-  ($left_ref, $right_ref) = p_coerce_int($left_ref, $right_ref);
-
-  my $node = p_node('mul_expr', $left_ref, $right_ref);
-  $node->{operator} = $op_ref->{value};
-
-  return $node;
+  if ($#cld) {
+    return p_node('foldl', @cld);
+  } else {
+    return $cld[0];
+  }
 }
 
 sub p_add_expression {
@@ -364,7 +335,7 @@ sub p_add_expression {
     push @cld, p_mul_expression();
   }
 
-  if ($#cld > 1) {
+  if ($#cld) {
     return p_node('foldl', @cld);
   } else {
     return $cld[0];
@@ -379,7 +350,7 @@ sub p_expression_bitwise_shift {
     push @cld, p_add_expression();
   }
 
-  if ($#cld > 1) {
+  if ($#cld) {
     return p_node('foldl', @cld);
   } else {
     return $cld[0];
@@ -433,14 +404,6 @@ sub p_expression_relational {
   my $op = consume()->{match};
   my $right_ref = p_expression_named_unary();
 
-  # Python doesn't like implicit type conversions, so...
-  if (exists $strop_to_cmpop{$op}) {
-    $op = $strop_to_cmpop{$op} || $op;
-    ($left_ref, $right_ref) = p_coerce_str($left_ref, $right_ref);
-  } else {
-    ($left_ref, $right_ref) = p_coerce_int($left_ref, $right_ref);
-  }
-
   return {
     'type' => 'comparison',
     'operator' => $op,
@@ -457,13 +420,6 @@ sub p_expression_equality {
 
   my $op = consume()->{match};
   my $right_ref = p_expression_named_unary();
-
-  if (exists $strop_to_cmpop{$op}) {
-    $op = $strop_to_cmpop{$op} || $op;
-    ($left_ref, $right_ref) = p_coerce_str($left_ref, $right_ref);
-  } else {
-    ($left_ref, $right_ref) = p_coerce_int($left_ref, $right_ref);
-  }
 
   return {
     'type' => 'comparison',
@@ -483,7 +439,7 @@ sub p_expression_bitwise_and {
     push @cld, p_expression_equality();
   }
 
-  if ($#cld > 1) {
+  if ($#cld) {
     return p_node('foldl', @cld);
   } else {
     return $cld[0];
@@ -498,7 +454,7 @@ sub p_expression_bitwise_ors {
     push @cld, p_expression_bitwise_and();
   }
 
-  if ($#cld > 1) {
+  if ($#cld) {
     return p_node('foldl', @cld);
   } else {
     return $cld[0];
