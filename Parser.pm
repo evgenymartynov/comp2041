@@ -237,7 +237,10 @@ sub p_variable {
   while ($tok{type} ~~ [ 'blockbegin', 'arraybegin' ]) {
     my $type = $tok{type};
     expect($type);
+
     push @accessors, p_expression_start();
+
+    $type =~ s/begin/end/;
     expect($type);
   }
 
