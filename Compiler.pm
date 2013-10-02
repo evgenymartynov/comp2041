@@ -129,12 +129,12 @@ sub compile_incdec {
 
 sub compile_stringify {
   my $node = shift;
-  compile_function_call('str', $node->{cld}->[0]);
+  compile_function_call('__str', $node->{cld}->[0]);
 }
 
 sub compile_integrify {
   my $node = shift;
-  compile_function_call('int', $node->{cld}->[0]);
+  compile_function_call('__int', $node->{cld}->[0]);
 }
 
 sub compile_string {

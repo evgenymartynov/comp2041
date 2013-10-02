@@ -2,8 +2,12 @@
 
 import sys, re
 
-__all__ = '__p2p_argv __p2p_print __p2p_printf __p2p_chomp __p2p_split __p2p_join __p2p_io __p2p_io_null'.split()
+__all__ = ('__p2p_argv __p2p_print __p2p_printf ' +
+    '__p2p_chomp __p2p_split __p2p_join ' +
+    '__p2p_io __p2p_io_null ' +
+    '__int __str ').split()
 
+__int, __str = int, str
 __p2p_argv = sys.argv[1:]
 
 def __p2p_to_string(v):
