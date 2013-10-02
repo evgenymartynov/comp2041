@@ -255,6 +255,7 @@ sub p_simple_value {
     when ('string')     { return p_string();         }
     when ('number')     { return p_literal_number(); }
     when ('parenbegin') { return p_expression_start(); }
+    when ('arraybegin') { return p_expression_start(); }
     when ('list_op')    { return p_func_call(); }
 
     default           {
@@ -654,13 +655,20 @@ sub p_print_statement {
 }
 
 sub p_expression_start {
-  my $gobble = $tok{type} eq 'parenbegin';
+  my $type = $tok{type};
+  my $gobble = $type ~~ ['parenbegin', 'arraybegin'];
 
-  expect('parenbegin') if $gobble;
+  expect($type) if $gobble;
+
   my $expression_ref = p_expression_low_precedence_logical_ors();
-  expect('parenend') if $gobble;
 
-  $expression_ref = p_parenthesise($expression_ref) if $gobble;
+  $type =~ s/begin/end/;
+  expect($type) if $gobble;
+
+  if ($gobble) {
+    $expression_ref = p_parenthesise($expression_ref);
+    $expression_ref->{type} = 'array_initialise' if $type eq 'arrayend';
+  }
 
   return $expression_ref;
 }
