@@ -25,3 +25,4 @@ date:start:end:description
 02/10:1630:1845:Fix various bugs related to type coersion, unaries, and not. Add I/O.
 02/10:2005:2110:Move preamble into its own module, fix name-aliasing issues, fix type coercsions
 02/10:2015:2118:Find & fix bug when empty strings don't compile correctly
+02/10:2120:2150:Unfold while (a=b) into while 1: a=b; if !a: break
