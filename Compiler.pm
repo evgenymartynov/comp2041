@@ -52,7 +52,14 @@ sub emit_node_value {
 
 sub lookup_variable {
   my $var = shift;
-  $var =~ s/^\$//;
+
+  for my $scope (@{$cs{locals}}) {
+    return $scope->{$var} if exists $scope->{$var};
+  }
+
+  # We didn't find one. Save it in current scope.
+  $cs{locals}->[-1]->{$var} = $var;
+
   return $var;
 }
 
@@ -287,6 +294,7 @@ sub compile_body {
   my $node = shift;
 
   $cs{depth}++;
+  unshift $cs{locals}, {};
 
   emit_token(':');
 
@@ -296,6 +304,8 @@ sub compile_body {
   }
 
   $cs{depth}--;
+  shift $cs{locals};
+
   emit_statement_begin();
 }
 
@@ -396,10 +406,15 @@ sub compile_node {
 
 sub compile {
   my $ast_ref = shift;
+  my $bootstrap_locals = {
+    'ARGV' => '__p2p_argv',
+  };
+
   %cs = (
     'depth' => 1,
     'node_depth' => 0,
     'postfix_incdec' => [],
+    'locals' => [ $bootstrap_locals ],
   );
 
   compile_node($ast_ref);

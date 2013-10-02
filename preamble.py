@@ -2,6 +2,8 @@
 
 import sys, re
 
+__p2p_argv = sys.argv[1:]
+
 def __p2p_readline():
   try:
     line = raw_input()

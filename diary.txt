@@ -21,3 +21,4 @@ date:start:end:description
 01/10:1430:1445:Cleaning up code, adding removed features
 01/10:1445:1600:Cleaning up code to be consistent with my newly developed Perl style
 02/10:1300:1405:Added named unaries and list operators, cleaned up preamble
+02/10:1530:1600:Added concept of a variable scope -- unnecessary but lets us handle "my" properly.
