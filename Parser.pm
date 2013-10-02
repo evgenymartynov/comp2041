@@ -178,7 +178,7 @@ sub interpolate_string {
     my $var  = shift @fragments;
 
     push @cld, p_node_with_value('string', $text) if $text;
-    push @cld, p_stringify(p_node_with_value('scalar', $var)) if defined($var);
+    push @cld, p_stringify(p_variable_from_string($var)) if defined($var);
 
     $last_text_fragment = defined($var) ? undef : $text;
   }
@@ -194,10 +194,6 @@ sub interpolate_string {
 sub p_string {
   my $tok = expect('string');
   return interpolate_string($tok);
-}
-
-sub p_scalar {
-  return p_leafget('scalar');
 }
 
 sub p_literal_number {
@@ -222,11 +218,40 @@ sub p_func_call {
   return p_emit_cheat($func, p_expression_funcargs());
 }
 
+sub p_variable_from_string {
+  # TODO
+  my $var = shift;
+  my $prefix = substr $var, 0, 1;
+  my $name = substr $var, 1;
+
+  my $node = p_node('variable');
+  $node->{value} = $name;
+  $node->{context} = $prefix;
+  return $node;
+}
+
+sub p_variable {
+  my ($prefix, $name) = split '', expect('variable')->{match}, 2;
+  my @accessors = ();
+
+  while ($tok{type} ~~ [ 'blockbegin', 'arraybegin' ]) {
+    my $type = $tok{type};
+    expect($type);
+    push @accessors, p_expression_start();
+    expect($type);
+  }
+
+  my $node = p_node('variable', @accessors);
+  $node->{value} = $name;
+  $node->{context} = $prefix;
+  return $node;
+}
+
 sub p_simple_value {
   given ($tok{type}) {
+    when ('variable')   { return p_variable();       }
     when ('string')     { return p_string();         }
     when ('number')     { return p_literal_number(); }
-    when ('scalar')     { return p_scalar();         }
     when ('parenbegin') { return p_expression_start(); }
     when ('list_op')    { return p_func_call(); }
 

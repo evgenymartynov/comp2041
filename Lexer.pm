@@ -11,6 +11,8 @@ my $pat_kw = join '|', qw(
     next last
 );
 
+my $pat_var_type = '\$|@|%';
+
 my $pat_named_unaries = join '|', qw(chomp);
 my $pat_list_operators = join '|', qw(split join);
 
@@ -29,6 +31,8 @@ my @patterns = (
   { 'type' => 'blockend',   're' => qr(}) },
   { 'type' => 'parenbegin', 're' => '\(' },
   { 'type' => 'parenend',   're' => '\)' },
+  { 'type' => 'arraybegin', 're' => '\[' },
+  { 'type' => 'arrayend',   're' => '\]' },
 
   { 'type' => 'keyword',    're' => qr(\b($pat_kw)\b) },
   { 'type' => 'named_unary','re' => qr(\b($pat_named_unaries)\b) },
@@ -44,7 +48,7 @@ my @patterns = (
 
   { 'type' => 'number',     're' => qr(-?([1-9][0-9]*|0)\b) },
   { 'type' => 'operator',   're' => '\+\+|--|' . $pat_operators },
-  { 'type' => 'scalar',     're' => "\\\$[$pat_variable_first][$pat_variable]*" },
+  { 'type' => 'variable',   're' => "($pat_var_type)[$pat_variable_first][$pat_variable]*" },
 
   { 'type' => 'string-rel', 're' => qr(\b(le|lt|ge|gt)\b) },
   { 'type' => 'string-eq',  're' => qr(\b(eq|ne)\b) },

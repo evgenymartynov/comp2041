@@ -133,9 +133,15 @@ sub compile_string {
   emit_identifier("$prefix'$escaped'");
 }
 
-sub compile_scalar {
+sub compile_variable {
   my $node = shift;
   emit_identifier(lookup_variable($node->{value}));
+
+  for my $child (@{$node->{cld}}) {
+    emit_token('[');
+    compile_node($child);
+    emit_token(']');
+  }
 }
 
 sub compile_call {
@@ -348,7 +354,7 @@ sub compile_node {
     when ('comment')          { compile_comment         ($node); }
     when ('number')           { compile_number          ($node); }
     when ('string')           { compile_string          ($node); }
-    when ('scalar')           { compile_scalar          ($node); }
+    when ('variable')         { compile_variable        ($node); }
     when ('range')            { compile_range           ($node); }
 
     when ('incdec')           { compile_incdec          ($node) }
