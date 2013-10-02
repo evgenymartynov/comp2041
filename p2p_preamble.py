@@ -2,14 +2,9 @@
 
 import sys, re
 
-__p2p_argv = sys.argv[1:]
+__all__ = '__p2p_argv __p2p_print __p2p_printf __p2p_chomp __p2p_split __p2p_join __p2p_io __p2p_io_null'.split()
 
-def __p2p_readline():
-  try:
-    line = raw_input()
-  except EOFError:
-    line = None
-  return line
+__p2p_argv = sys.argv[1:]
 
 def __p2p_to_string(v):
   if type(v) is bool:
@@ -54,6 +49,7 @@ def __p2p_io_nullgen_create():
         break
 
 __p2p_io_nullgen = __p2p_io_nullgen_create()
+
 def __p2p_io_null():
   global __p2p_io_nullgen
   try:
@@ -61,5 +57,3 @@ def __p2p_io_null():
   except StopIteration:
     __p2p_io_nullgen = __p2p_io_nullgen_create()  # Reset <> as per perl spec
     return None
-
-def main():

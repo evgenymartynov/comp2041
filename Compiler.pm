@@ -346,11 +346,7 @@ sub compile_program {
   my $node = shift;
 
   # Small hack to get our preamble set up
-  open F, '<preamble.py';
-  my $preamble = do { local $/ = undef; <F> };
-  chomp $preamble;
-  close F;
-  emit_internal_string($preamble);
+  emit_internal_string("from p2p_preamble import *\nimport sys\n");
   emit_statement_begin();
 
   my @cld = @{$node->{cld}};  # Useless but simplifies next few lines
@@ -364,9 +360,6 @@ sub compile_program {
     compile_node($node_ref);
     emit_statement_begin();
   }
-
-  $cs{depth}--;
-  print("\nmain()\n");
 }
 
 sub compile_node {
@@ -449,7 +442,7 @@ sub compile {
   };
 
   %cs = (
-    'depth' => 1,
+    'depth' => 0,
     'node_depth' => 0,
     'postfix_incdec' => [],
     'locals' => [ $bootstrap_locals ],
