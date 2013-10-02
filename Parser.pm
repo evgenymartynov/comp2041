@@ -147,6 +147,11 @@ sub interpolate_string {
   my $quoted_string = $tok->{match};
   my $string = substr $quoted_string, 1, -1;
 
+  # Empty string?
+  if (!$string) {
+    return p_node_with_value('string', '');
+  }
+
   my $is_raw = ($quoted_string =~ /^'/);
   if ($is_raw) {
     my %raw_node = %{p_node_with_value('string', $string)};
