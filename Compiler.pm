@@ -132,6 +132,11 @@ sub compile_stringify {
   compile_function_call('str', $node->{cld}->[0]);
 }
 
+sub compile_integrify {
+  my $node = shift;
+  compile_function_call('int', $node->{cld}->[0]);
+}
+
 sub compile_string {
   my $node = shift;
 
@@ -159,7 +164,7 @@ sub compile_call {
   my $func = $node->{func};
   emit_identifier($func);
   emit_token("(");
-  compile_node($node->{cld}->[0]);
+  compile_node($node->{cld}->[0]) if defined $node->{cld}->[0];
   emit_token(")");
 }
 
@@ -394,6 +399,7 @@ sub compile_node {
 
     when ('comma_sep_string_concat') { compile_comma_sep_string_concat($node); }
     when ('stringify')        { compile_stringify       ($node); }
+    when ('integrify')        { compile_integrify       ($node); }
 
     default           {
       print "What are you doing? Got this: ";

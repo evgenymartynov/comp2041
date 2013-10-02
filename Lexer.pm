@@ -67,10 +67,8 @@ my @patterns = (
   { 'type' => 'lp-or',      're' => qr(\bor\b) },
   { 'type' => 'lp-xor',     're' => qr(\bxor\b) },
 
-  { 'type' => 'filedes',    're' => qr(\bSTDIN\b) },
-
   { 'type' => 'whitespace', 're' => qr([$pat_space]+) , 'ignore' => 1 },
-  { 'type' => 'word',       're' => qr([^$pat_space$pat_special]+) },
+  { 'type' => 'word',       're' => qr(\b[^$pat_space$pat_special]+\b) },
 );
 
 sub get_next_token {

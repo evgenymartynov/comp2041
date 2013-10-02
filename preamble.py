@@ -24,7 +24,7 @@ def __p2p_print(*args):
     sys.stdout.write(__p2p_to_string(v))
 
 def __p2p_printf(fmt, *args):
-  sys.stdout.write(fmt.format(args[1:]))
+  sys.stdout.write(fmt % args)
 
 def __p2p_chomp(string):
   # TODO handle lists and return values properly -- tuples?

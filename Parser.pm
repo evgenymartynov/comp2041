@@ -53,6 +53,26 @@ sub p_stringify {
   return p_node('stringify', shift);
 }
 
+sub p_integrify {
+  return p_node('integrify', shift);
+}
+
+sub p_coerce_str {
+  my @coerced = ();
+  foreach my $ref (@_) {
+    push @coerced, ($ref->{type} eq 'string' ? $ref : p_stringify($ref));
+  }
+  return @coerced;
+}
+
+sub p_coerce_int {
+  my @coerced = ();
+  foreach my $ref (@_) {
+    push @coerced, ($ref->{type} eq 'number' ? $ref : p_integrify($ref));
+  }
+  return @coerced;
+}
+
 sub p_emit_cheat {
   my ($p2p_builtin, @args) = @_;
   my $ref = p_node('call', @args);
@@ -183,9 +203,8 @@ sub interpolate_string {
     $last_text_fragment = defined($var) ? undef : $text;
   }
 
-  # Does this string have EOL?
-  if ($last_text_fragment =~ /\\n$/) {  # TODO: breaks if \\\\\\n.
-    $cld[-1]->{eol} = 1;
+  if ($#cld == 0) {  # Bloody perl
+    return $cld[0];
   }
 
   return $node;
@@ -329,6 +348,8 @@ sub p_mul_expression {
   my $op_ref = p_literal_op();
   my $right_ref = p_mul_expression();
 
+  ($left_ref, $right_ref) = p_coerce_int($left_ref, $right_ref);
+
   my $node = p_node('mul_expr', $left_ref, $right_ref);
   $node->{operator} = $op_ref->{value};
 
@@ -384,14 +405,22 @@ sub p_expression_relational {
   return $left_ref unless is_relational;
 
   my $op = consume()->{match};
-  $op = $strop_to_cmpop{$op} || $op;
+  my $right_ref = p_expression_named_unary();
+
+  # Python doesn't like implicit type conversions, so...
+  if (exists $strop_to_cmpop{$op}) {
+    $op = $strop_to_cmpop{$op} || $op;
+    ($left_ref, $right_ref) = p_coerce_str($left_ref, $right_ref);
+  } else {
+    ($left_ref, $right_ref) = p_coerce_int($left_ref, $right_ref);
+  }
 
   return {
     'type' => 'comparison',
     'operator' => $op,
     'cld' => [
       $left_ref,
-      p_expression_named_unary(),
+      $right_ref,
     ]
   };
 }
@@ -401,14 +430,21 @@ sub p_expression_equality {
   return $left_ref unless is_equality;
 
   my $op = consume()->{match};
-  $op = $strop_to_cmpop{$op} || $op;
+  my $right_ref = p_expression_named_unary();
+
+  if (exists $strop_to_cmpop{$op}) {
+    $op = $strop_to_cmpop{$op} || $op;
+    ($left_ref, $right_ref) = p_coerce_str($left_ref, $right_ref);
+  } else {
+    ($left_ref, $right_ref) = p_coerce_int($left_ref, $right_ref);
+  }
 
   return {
     'type' => 'comparison',
     'operator' => $op,
     'cld' => [
       $left_ref,
-      p_expression_relational(),
+      $right_ref,
     ],
   };
 }
