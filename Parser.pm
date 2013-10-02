@@ -505,11 +505,9 @@ sub p_expression_rightward_list_op {
         return p_foreach_expression();
       }
 
+      default {
+        die 'unknown keyword when parsing rightward list ops ', Dumper(\%tok);
       }
-    }
-
-    default {
-      die 'unknown keyword when parsing rightward list ops ', Dumper(\%tok);
     }
   } else {
     return p_expression_comma();
