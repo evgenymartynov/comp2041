@@ -1,6 +1,6 @@
 #!/usr/bin/python2 -u
 
-import sys
+import sys, re
 
 def __p2p_readline():
   try:
@@ -9,15 +9,31 @@ def __p2p_readline():
     line = None
   return line
 
+def __p2p_to_string(v):
+  if type(v) is bool:
+    return '1' if v else ''
+  elif type(v) is list:
+    return ''.join(map(__p2p_to_string, v))
+  else:
+    return str(v)
+
 def __p2p_print(*args):
   for v in args:
-    if type(v) is bool:
-      sys.stdout.write('1' if v else '')  # Perl is "special"
-    else:
-      sys.stdout.write(str(v))
+    sys.stdout.write(__p2p_to_string(v))
 
-def __p2p_printf(*args):
-  fmt = args[0]
-  sys.stdout.write(fmt % tuple(map(str, args[1:])))
+def __p2p_printf(fmt, *args):
+  sys.stdout.write(fmt.format(args[1:]))
+
+def __p2p_chomp(string):
+  # TODO handle lists and return values properly -- tuples?
+  return string.rstrip('\n')
+
+def __p2p_split(pat=None, expr=None, limit=None):
+  if pat is None: pat = re.compile('\s+')
+  limit = limit - 1 if limit is not None else 0
+  return re.split(pat, expr, limit)
+
+def __p2p_join(expr, items):
+  return expr.join(items)
 
 def main():
