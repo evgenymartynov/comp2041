@@ -63,6 +63,15 @@ sub lookup_variable {
   return $var;
 }
 
+sub lookup_operator {
+  my %translations = (
+    '!' => 'not',
+  );
+
+  my $op = shift;
+  return $translations{$op} || $op;
+}
+
 sub compile_comment {
   emit_node_value(shift);
 }
@@ -210,7 +219,7 @@ sub compile_unary {
   my $node = shift;
   my $ref = $node->{cld}->[0];
 
-  emit_token($node->{operator}->{value});
+  emit_token(lookup_operator($node->{operator}->{value}));
   emit_token('(');
   compile_node($ref);
   emit_token(')');

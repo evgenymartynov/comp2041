@@ -562,7 +562,7 @@ sub p_expression_rightward_list_op {
 }
 
 sub p_expression_low_precedence_logical_not {
-  return p_expression_rightward_list_op() unless $tok{type} eq 'not';
+  return p_expression_rightward_list_op() unless $tok{type} eq 'lp-not';
 
   expect('lp-not');
 
