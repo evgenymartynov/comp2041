@@ -301,19 +301,33 @@ sub compile_assignment {
   my $node = shift;
   my ($lvalue_ref, $rvalue_ref) = @{$node->{cld}};
 
+  my $is_array =
+      $lvalue_ref->{type} eq 'variable' && $lvalue_ref->{context} eq '@';
+  if ($is_array && $rvalue_ref->{type} eq 'parenthesise') {
+    $rvalue_ref->{type} = 'array_initialise';
+  }
+
   compile_node($lvalue_ref);
   emit_token(($node->{operator} || '') . '=');
   compile_node($rvalue_ref);
 }
 
-sub compile_parenthesise {
-  my $node = shift;
+sub _compile_bracketed {
+  my ($bopen, $bclose, $node) = @_;
 
-  emit_token('(');
+  emit_token($bopen);
   for my $child (@{$node->{cld}}) {
     compile_node($child);
   }
-  emit_token(')');
+  emit_token($bclose);
+}
+
+sub compile_parenthesise {
+  _compile_bracketed('(', ')', shift);
+}
+
+sub compile_array_initialise {
+  _compile_bracketed('[', ']', shift);
 }
 
 sub compile_foldl {
@@ -560,6 +574,7 @@ sub compile_node {
     when ('loop_control')     { compile_loopcontrol     ($node); }
 
     when ('parenthesise')     { compile_parenthesise    ($node); }
+    when ('array_initialise') { compile_array_initialise($node); }
 
     when ('comma_sep_string_concat') { compile_comma_sep_string_concat($node); }
     when ('stringify')        { compile_stringify       ($node); }
