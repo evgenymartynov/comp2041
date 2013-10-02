@@ -320,13 +320,68 @@ sub compile_if {
   ( emit_keyword('else'), compile_node($false_ref) ) if defined($false_ref);
 }
 
+sub fuck_with_while_conditions {
+  my $node = shift;
+  if ($node->{type} eq 'assignment') {
+    my %copy = %{$node};
+    %{$node} = %{$copy{cld}->[0]};
+
+    return \%copy;
+  }
+
+  my @ass = ();
+  for my $child (@{$node->{cld}}) {
+    push @ass, fuck_with_while_conditions($child);
+  }
+
+  return @ass;
+}
+
 sub compile_while {
   my $node = shift;
   my ($cond_ref, $body_ref) = @{$node->{cld}};
 
   emit_keyword('while');
-  compile_node($cond_ref);
-  compile_node($body_ref);
+
+  my @assignments = fuck_with_while_conditions($cond_ref);
+  if (@assignments) {
+    # Turn this into while(1)
+    compile_node({'type' => 'number', 'value' => '1'});
+
+    # Now add: if (!(condition)): break
+    my $exit_block = {
+      'type' => 'if_expr',
+      'cld' => [
+        {
+          'type' => 'unary',
+          'operator' => {
+            'type' => 'operator',
+            'value' => '!',
+            'operator' => '!',
+          },
+          'cld' => [
+            $cond_ref,
+          ],
+        },
+        {
+          'type' => 'body',
+          'cld' => [
+            {
+              'type' => 'loop_control',
+              'value' => 'last',
+            },
+          ],
+        },
+      ],
+    };
+
+    unshift @{$body_ref->{cld}}, @assignments, $exit_block;
+    compile_node($body_ref);
+  } else {
+    # Just compile normally
+    compile_node($cond_ref);
+    compile_node($body_ref);
+  }
 }
 
 sub compile_for {
