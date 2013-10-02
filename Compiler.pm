@@ -111,10 +111,31 @@ sub lookup_operator {
   return $translations{$op} || $op;
 }
 
+sub mk_variable {
+  return {
+    'type' => 'variable',
+    'context' => shift,
+    'value' => shift,
+  };
+}
+
 sub convert_op {
   my $op = shift;
   my %ops = qw(. + x * eq == ne != lt < gt > le <= ge >=);
   return $ops{$op} || $op;
+}
+
+sub foldl_nodeopnum {
+  my ($node, $op, $num) = @_;
+
+  return {
+    'type' => 'foldl',
+    'cld' => [
+      $node,
+      { 'type' => 'operator', 'operator' => $op },
+      { 'type' => 'number', 'value' => $num },
+    ],
+  };
 }
 
 sub compile_comment {
