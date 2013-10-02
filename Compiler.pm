@@ -137,7 +137,7 @@ sub compile_call {
   my $func = $node->{func};
   emit_identifier($func);
   emit_token("(");
-  compile_comma($node->{cld}->[0]);
+  compile_node($node->{cld}->[0]);
   emit_token(")");
 }
 
@@ -305,6 +305,7 @@ sub compile_program {
   # Small hack to get our preamble set up
   open F, '<preamble.py';
   my $preamble = do { local $/ = undef; <F> };
+  chomp $preamble;
   close F;
   emit_internal_string($preamble);
   emit_statement_begin();
@@ -320,6 +321,9 @@ sub compile_program {
     compile_node($node_ref);
     emit_statement_begin();
   }
+
+  $cs{depth}--;
+  print("\nmain()\n");
 }
 
 sub compile_node {
@@ -393,7 +397,7 @@ sub compile_node {
 sub compile {
   my $ast_ref = shift;
   %cs = (
-    'depth' => 0,
+    'depth' => 1,
     'node_depth' => 0,
     'postfix_incdec' => [],
   );

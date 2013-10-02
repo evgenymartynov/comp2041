@@ -20,4 +20,4 @@ def __p2p_printf(*args):
   fmt = args[0]
   sys.stdout.write(fmt % tuple(map(str, args[1:])))
 
-###
+def main():
