@@ -27,3 +27,4 @@ date:start:end:description
 02/10:2015:2118:Find & fix bug when empty strings don't compile correctly
 02/10:2120:2150:Unfold while (a=b) into while 1: a=b; if !a: break
 02/10:2200:2250:Added $#list notation & made compiler spit out nicer xrange()s
+02/10:2320:2330:Added pop/push/shift/unshift
