@@ -400,7 +400,33 @@ sub p_expression_named_unary {
   return p_emit_cheat($func, $arg);
 }
 
+sub p_expression_io {
+  expect('comparison');
+
+  # Check for null filehandle
+  if ($tok{type} eq 'comparison' && $tok{match} eq '>') {
+    expect('comparison');
+    return p_emit_cheat('io_null');
+  }
+
+  # Check for bareword filehandle
+  if ($tok{type} eq 'word') {
+    my $ref = p_node_with_value('io', consume()->{match});
+    expect('comparison');
+    return $ref;
+  }
+
+  # Okay, assume variable/scalar.
+  my $fd = p_expression_named_unary();
+  expect('comparison');
+
+  return p_node('io', $fd);
+}
+
 sub p_expression_relational {
+  # Try I/O.
+  return p_expression_io() if ($tok{type} eq 'comparison' && $tok{match} eq '<');
+
   my $left_ref = p_expression_named_unary();
   return $left_ref unless is_relational;
 

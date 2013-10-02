@@ -38,4 +38,28 @@ def __p2p_split(pat=None, expr=None, limit=None):
 def __p2p_join(expr, items):
   return expr.join(items)
 
+def __p2p_io(fh):
+  try:
+    return fh.readline()
+  except:
+    return None
+
+def __p2p_io_nullgen_create():
+  files = [ sys.stdin ] + map(open, sys.argv[1:])
+  for f in files:
+    while 1:
+      try:
+        yield f.readline()
+      except:
+        break
+
+__p2p_io_nullgen = __p2p_io_nullgen_create()
+def __p2p_io_null():
+  global __p2p_io_nullgen
+  try:
+    return __p2p_io_nullgen.next()
+  except StopIteration:
+    __p2p_io_nullgen = __p2p_io_nullgen_create()  # Reset <> as per perl spec
+    return None
+
 def main():

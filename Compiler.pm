@@ -168,6 +168,19 @@ sub compile_call {
   emit_token(")");
 }
 
+sub compile_io {
+  my $node = shift;
+
+  if (exists $node->{value}) {
+    emit_identifier('__p2p_io');
+    emit_token("(");
+    emit_identifier(lookup_variable($node->{value}));
+    emit_token(")");
+  } elsif (length @{$node->{cld}}) {
+    die 'TODO scalar fd';
+  }
+}
+
 sub compile_comma_sep_expr {
   my $node = shift;
   compile_comma_sep_expr_onlist(@{$node->{cld}});
@@ -387,6 +400,7 @@ sub compile_node {
     when ('comma_sep_expr')   { compile_comma_sep_expr  ($node); }
 
     when ('call')             { compile_call            ($node); }
+    when ('io')               { compile_io              ($node); }
 
     when ('if_expr')          { compile_if              ($node); }
     when ('while_expr')       { compile_while           ($node); }
@@ -429,6 +443,9 @@ sub compile {
   my $ast_ref = shift;
   my $bootstrap_locals = {
     'ARGV' => '__p2p_argv',
+    'STDIN' => 'sys.stdin',
+    'STDOUT' => 'sys.stdout',
+    'STDERR' => 'sys.stderr',
   };
 
   %cs = (
