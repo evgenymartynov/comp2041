@@ -72,8 +72,7 @@ sub is_multiplicative {
 }
 
 sub is_named_unary {
-  my @ops = qw(chomp);
-  return $tok{match} ~~ @ops;
+  return $tok{type} eq 'named_unary';
 }
 
 sub is_bitwise_shift {

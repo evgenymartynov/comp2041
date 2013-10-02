@@ -4,6 +4,7 @@ import sys, re
 
 __all__ = ('__p2p_argv __p2p_print __p2p_printf ' +
     '__p2p_chomp __p2p_split __p2p_join ' +
+    '__p2p_pop __p2p_shift __p2p_push __p2p_unshift ' +
     '__p2p_io __p2p_io_null ' +
     '__int __str __len ').split()
 
@@ -36,6 +37,19 @@ def __p2p_split(pat=None, expr=None, limit=None):
 
 def __p2p_join(expr, items):
   return expr.join(items)
+
+def __p2p_pop(lst):
+  return lst.pop()
+def __p2p_shift(lst):
+  return lst.pop(0)
+
+def __p2p_push(lst, *args):
+  lst.extend(args)
+  return len(lst)
+def __p2p_unshift(lst, *args):
+  for i, arg in enumerate(args):
+    lst.insert(i, arg)
+  return len(lst)
 
 def __p2p_io(fh):
   try:

@@ -13,8 +13,8 @@ my $pat_kw = join '|', qw(
 
 my $pat_var_type = '\$|@|%';
 
-my $pat_named_unaries = join '|', qw(chomp);
-my $pat_list_operators = join '|', qw(split join);
+my $pat_named_unaries = join '|', qw(chomp pop shift);
+my $pat_list_operators = join '|', qw(split join push unshift);
 
 my $pat_comparisons = join '|', qw(<= >= == != < >);
 my $pat_operators = join '|', qw(\+ - \*\* / % \* x \.);
