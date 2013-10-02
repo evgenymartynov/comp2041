@@ -48,7 +48,7 @@ my @patterns = (
 
   { 'type' => 'number',     're' => qr(-?([1-9][0-9]*|0)\b) },
   { 'type' => 'operator',   're' => '\+\+|--|' . $pat_operators },
-  { 'type' => 'variable',   're' => "($pat_var_type)[$pat_variable_first][$pat_variable]*" },
+  { 'type' => 'variable',   're' => "($pat_var_type)#?[$pat_variable_first][$pat_variable]*" },
 
   { 'type' => 'string-rel', 're' => qr(\b(le|lt|ge|gt)\b) },
   { 'type' => 'string-eq',  're' => qr(\b(eq|ne)\b) },

@@ -229,6 +229,11 @@ sub p_variable {
   my ($prefix, $name) = split '', expect('variable')->{match}, 2;
   my @accessors = ();
 
+  # Special case: $#list
+  if ($prefix eq '$' && substr($name, 0, 1) eq '#') {
+    return p_node_with_value('last_item_index', substr($name, 1));
+  }
+
   while ($tok{type} ~~ [ 'blockbegin', 'arraybegin' ]) {
     my $type = $tok{type};
     expect($type);
@@ -500,10 +505,6 @@ sub p_expression_range {
 
   expect('range');
   my $right_ref = p_expression_logical_or();
-
-  # Fix up inclusive/exclusive ranges
-  $right_ref = p_node('add_expr', $right_ref, p_node_with_value('number', '1'));
-  $right_ref->{operator} = '+';
 
   return {
     'type' => 'range',

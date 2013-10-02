@@ -169,7 +169,40 @@ sub compile_range {
   my $node = shift;
   my ($from_ref, $to_ref) = @{$node->{cld}};
 
+  # In case of ranges, we compile x..$#list to a more natural form of
+  #   xrange(x, len(list))
+  if ($to_ref->{type} eq 'last_item_index') {
+    $to_ref = {
+      'type' => 'call',
+      'func' => '__len',
+      'cld' => [ mk_variable('@', $to_ref->{value}) ],
+    };
+  } else {
+    # Otherwise we have to add one to account for xrange()
+    # being inclusive/exclusive.
+    $to_ref = foldl_nodeopnum($to_ref, '+', '1');
+  }
+
   compile_function_call('xrange', $from_ref, $to_ref);
+}
+
+sub compile_last_item_index {
+  my $node = shift;
+  my $listname = $node->{value};
+
+  # There comes a moment when you really can't be bothered to make an AST
+
+  compile_node({
+    'type' => 'parenthesise',
+    'cld' => [ foldl_nodeopnum(
+        {
+          'type' => 'call',
+          'func' => '__len',
+          'cld' => [ mk_variable('@', $listname) ],
+        },
+        '-', 1
+    )],
+  });
 }
 
 sub compile_comma {
@@ -501,6 +534,7 @@ sub compile_node {
     when ('string')           { compile_string          ($node); }
     when ('variable')         { compile_variable        ($node); }
     when ('range')            { compile_range           ($node); }
+    when ('last_item_index')  { compile_last_item_index ($node); }
 
     when ('incdec')           { compile_incdec          ($node) }
 
@@ -510,7 +544,6 @@ sub compile_node {
     when ('unary')            { compile_unary           ($node); }
 
     when ('assignment')       { compile_assignment      ($node); }
-    when ('add_expr')         { compile_binary_op_expr  ($node); }
     when ('logical')          { compile_binary_op_expr  ($node); }
     when ('power')            { compile_binary_op_expr  ($node); }
     when ('comparison')       { compile_binary_op_expr  ($node); }
