@@ -246,6 +246,24 @@ sub compile_string {
   emit_identifier("$prefix'$escaped'");
 }
 
+sub compile_regexp {
+  my $node = shift;
+
+  my $regexp = $node->{value};
+  my $type = substr $regexp, 0, 1;
+  if ($type eq '/') {
+    $type = 'm';
+    $regexp = "m$regexp";
+  }
+
+  $regexp = substr $regexp, 2, -1;
+
+  compile_function_call(
+      '__re.compile',
+      { 'type' => 'string', 'value' => $regexp }
+  );
+}
+
 sub compile_variable {
   my $node = shift;
   emit_identifier(lookup_variable($node->{value}));
@@ -577,7 +595,7 @@ sub compile_node {
     when ('comment')          { compile_comment         ($node); }
     when ('number')           { compile_number          ($node); }
     when ('string')           { compile_string          ($node); }
-    when ('regexp')           { compile_string          ($node); }
+    when ('regexp')           { compile_regexp          ($node); }
     when ('variable')         { compile_variable        ($node); }
     when ('range')            { compile_range           ($node); }
     when ('last_item_index')  { compile_last_item_index ($node); }
@@ -645,6 +663,7 @@ sub compile {
     'STDIN' => 'sys.stdin',
     'STDOUT' => 'sys.stdout',
     'STDERR' => 'sys.stderr',
+    map { ("$_", "__p2p_group($_)") } (1..10),
   };
 
   %cs = (

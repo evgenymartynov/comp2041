@@ -3,8 +3,7 @@ use strict;
 
 my $pat_space = " \t\n";
 my $pat_special = ",;'\"{}()";
-my $pat_variable_first = 'A-Za-z_';
-my $pat_variable = "${pat_variable_first}0-9";
+my $pat_variable = '0-9A-Za-z_';
 my $pat_kw = join '|', qw(
     print printf
     if else elsif while for foreach
@@ -46,14 +45,14 @@ my @patterns = (
   { 'type' => 'bw-shift',   're' => qr(<<|>>) },
 
   { 'type' => 'regexp_comparison', 're' => $pat_regexp_comparison },
-  { 'type' => 'regexp',     're' => 'm' . $pat_regexp_body },
+  { 'type' => 'regexp',     're' => 'm?' . $pat_regexp_body },
 
   { 'type' => 'comparison', 're' => $pat_comparisons },
   { 'type' => 'assignment', 're' => qr(($pat_operators)=) },
   { 'type' => 'assignment', 're' => '=' },
 
   { 'type' => 'number',     're' => qr(-?([1-9][0-9]*|0)\b) },
-  { 'type' => 'variable',   're' => "($pat_var_type)#?[$pat_variable_first][$pat_variable]*" },
+  { 'type' => 'variable',   're' => "($pat_var_type)#?[$pat_variable]+" },
   { 'type' => 'operator',   're' => '\+\+|--|' . $pat_operators },
 
   { 'type' => 'string-rel', 're' => qr(\b(le|lt|ge|gt)\b) },

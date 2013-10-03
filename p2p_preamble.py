@@ -7,10 +7,12 @@ __all__ = ('__p2p_argv __p2p_print __p2p_printf ' +
     '__p2p_pop __p2p_shift __p2p_push __p2p_unshift __p2p_reverse ' +
     '__p2p_io __p2p_io_null ' +
     '__p2p_re_match ' +
-    '__int __str __len __p2p_dict ').split()
+    '__int __str __len __p2p_dict ' +
+    '__re __p2p_group ').split()
 
-__int, __str, __len = int, str, len
+__int, __str, __len, __re = int, str, len, re
 __p2p_argv = sys.argv[1:]
+__p2p_matchgroups = None
 
 def __p2p_dict(*args):
   return dict(zip(args[::2], args[1::2]))
@@ -62,18 +64,12 @@ def __p2p_reverse(*args):
   return list(reversed(args))
 
 def __p2p_re_match(op, string, regex):
-  negate = (op == '!~')
+  global __p2p_matchgroups
+  __p2p_matchgroups = regex.search(string)
+  return (op == '!~') ^ (__p2p_matchgroups is not None)
 
-  re_type = regex[0]
-  if re_type == '/':
-    regex = 'm' + regex
-    re_type = 'm'
-
-  regex = re.compile(regex[2:-1]);
-  if re_type == 'm':
-    return regex.match(string) is not None
-  else:
-    raise Exception("unknown regex optype :(")
+def __p2p_group(num):
+  return __p2p_matchgroups.group(num)
 
 def __p2p_io(fh):
   try:
