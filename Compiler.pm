@@ -459,46 +459,8 @@ sub compile_while {
   my ($cond_ref, $body_ref) = @{$node->{cld}};
 
   emit_keyword('while');
-
-  my @assignments = fuck_with_while_conditions($cond_ref);
-  if (@assignments) {
-    # Turn this into while(1)
-    compile_node({'type' => 'number', 'value' => '1'});
-
-    # Now add: if (!(condition)): break
-    my $exit_block = {
-      'type' => 'if_expr',
-      'cld' => [
-        {
-          'type' => 'unary',
-          'operator' => {
-            'type' => 'operator',
-            'value' => '!',
-            'operator' => '!',
-          },
-          'cld' => [
-            $cond_ref,
-          ],
-        },
-        {
-          'type' => 'body',
-          'cld' => [
-            {
-              'type' => 'loop_control',
-              'value' => 'last',
-            },
-          ],
-        },
-      ],
-    };
-
-    unshift @{$body_ref->{cld}}, @assignments, $exit_block;
-    compile_node($body_ref);
-  } else {
-    # Just compile normally
-    compile_node($cond_ref);
-    compile_node($body_ref);
-  }
+  compile_node($cond_ref);
+  compile_node($body_ref);
 }
 
 sub compile_for {

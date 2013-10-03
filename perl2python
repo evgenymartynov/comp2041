@@ -6,10 +6,12 @@ use Data::Dumper;
 require Lexer;
 require Parser;
 require Compiler;
+require NeverAgain;
 
 my @data = <>;
 my $data = join '', @data;
 
 my $token_ref = Lexer::lex($data);
 my $tree_ref = Parser::parse($token_ref);
+$tree_ref = NeverAgain::am_i_going_to_write_a_perl_compiler($tree_ref);
 Compiler::compile($tree_ref);
