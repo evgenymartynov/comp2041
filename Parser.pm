@@ -606,22 +606,6 @@ sub p_expression_rightward_list_op {
       when (['print', 'printf']) {
         return p_print_statement();
       }
-
-      when (['if', 'unless']) {
-        return p_if_expression();
-      }
-
-      when ('while') {
-        return p_while_expression();
-      }
-
-      when ('for') {
-        return p_for_expression();
-      }
-
-      when ('foreach') {
-        return p_foreach_expression();
-      }
     }
   }
 
@@ -753,6 +737,31 @@ sub p_expression_start {
   return $expression_ref;
 }
 
+sub p_expression_controlstructure {
+  if ($tok{type} eq 'keyword') {
+    given ($tok{match}) {
+      when (['if', 'unless']) {
+        return p_if_expression();
+      }
+
+      when ('while') {
+        return p_while_expression();
+      }
+
+      when ('for') {
+        return p_for_expression();
+      }
+
+      when ('foreach') {
+        return p_foreach_expression();
+      }
+    }
+  }
+
+  # Default case
+  return p_statement();
+}
+
 sub p_body_expression {
   my $node = {
     'type' => 'body',
@@ -762,7 +771,7 @@ sub p_body_expression {
   expect('blockbegin');
 
   while ($tok{type} ne 'blockend') {
-    push $node->{cld}, p_statement();
+    push $node->{cld}, p_expression_controlstructure();
   }
 
   expect('blockend');
@@ -882,7 +891,7 @@ sub p_program {
     if ($tok{type} eq 'comment') {
       push $node->{cld}, p_comment();
     } else {
-      push $node->{cld}, p_statement();
+      push $node->{cld}, p_expression_controlstructure();
     }
   }
 
