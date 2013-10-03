@@ -221,11 +221,6 @@ sub compile_comma {
   }
 }
 
-sub compile_incdec {
-  my $node = shift;
-  push $cs{postfix_incdec}, [ $cs{node_depth}, $node ];
-}
-
 sub compile_stringify {
   my $node = shift;
   compile_function_call('__str', $node->{cld}->[0]);
@@ -562,8 +557,6 @@ sub compile_node {
     when ('range')            { compile_range           ($node); }
     when ('last_item_index')  { compile_last_item_index ($node); }
 
-    when ('incdec')           { compile_incdec          ($node) }
-
     when ('comma')            { compile_comma           ($node); }
 
     when ('foldl')            { compile_foldl           ($node); }
@@ -603,20 +596,6 @@ sub compile_node {
     }
   }
 
-  my $replacement = [];
-  foreach my $ref (@{$cs{postfix_incdec}}) {
-    if ($ref->[0] == $cs{node_depth}) {
-      compile_node($ref->[1]->{cld}->[0]);
-
-      my $op = substr $ref->[1]->{operator}, 0, 1;
-      emit_token($op . '=');
-      emit_constant('1');
-    } else {
-      push $replacement, $ref;
-    }
-  }
-  $cs{postfix_incdec} = $replacement;
-
   $cs{node_depth}--;
 }
 
@@ -633,7 +612,6 @@ sub compile {
   %cs = (
     'depth' => 0,
     'node_depth' => 0,
-    'postfix_incdec' => [],
     'locals' => [ $bootstrap_locals ],
   );
 

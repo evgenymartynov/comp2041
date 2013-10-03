@@ -292,37 +292,37 @@ sub p_simple_value {
   }
 }
 
+# I don't care about cases like ++$x++ for two reasons:
+# 1) The behaviour is undefined by Perl anyway
+# 2) It makes my life hard
+#
+# Thus we translate ++$x into ($x += 1), and $x++ is handled by the
+# postprocessor. If both appear, ++$x overrides the postfix version.
 sub p_expression_incdec {
-  my $opref;
-
   if (is_incdec) {
-    $opref = {
-      'type' => 'operator',
-      'operator' => $tok{match},
-      'cld' => [],
-      'prefix' => 1,
+    my $op = expect('operator')->{match};
+    my $node_ref = p_simple_value();
+
+    return {
+      'type' => 'foldl',
+      'cld' => [
+        $node_ref,
+        { 'type' => 'operator', 'value' => substr($op, 0, 1) },
+        { 'type' => 'number', 'value' => '1' },
+      ],
     };
-    expect('operator');
   }
 
   my $node_ref = p_simple_value();
 
   if (is_incdec) {
-    if (defined $opref) {
-      die 'Bad prefix/postfix operation: doing both at once';
-    }
-
-    $opref = {
+    my $opref = {
       'type' => 'incdec',
       'operator' => $tok{match},
-      'cld' => [],
-      'postfix' => 1,
+      'cld' => [ $node_ref ],
     };
-    expect('operator');
-  }
 
-  if (defined $opref) {
-    push $opref->{cld}, $node_ref;
+    expect('operator');
     return $opref;
   }
 

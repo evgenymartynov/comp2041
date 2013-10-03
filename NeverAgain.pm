@@ -24,6 +24,10 @@ sub node_with_children {
   };
 }
 
+sub node_empty {
+  return node_with_children('empty');
+}
+
 sub node_true {
   return node_with_value('number', '1');
 }
@@ -99,10 +103,55 @@ sub pull_assignments {
   }
 }
 
+sub pull_postfix_incdec {
+  my ($node, $suppress_if_silly) = @_;
+
+  if ($node->{type} eq 'program' || $node->{type} eq 'body') {
+    my @ops = ();
+
+    foreach my $child (@{$node->{cld}}) {
+      my @temp = pull_postfix_incdec($child, 1);
+      push @ops, $child;
+      push @ops, @temp;
+    }
+
+    $node->{cld} = \@ops;
+    return ();
+  } elsif ($node->{type} eq 'incdec') {
+    my %thingy = %{$node->{cld}->[0]};
+    my $op = substr $node->{operator}, 0, 1;
+
+    if ($suppress_if_silly) {
+      %{$node} = %{node_empty()};
+    } else {
+      %{$node} = %thingy;
+    }
+
+    return {
+      'type' => 'foldl',
+      'cld' => [
+        \%thingy,
+        { 'type' => 'operator', 'operator' => substr($op, 0, 1) . '=' },
+        { 'type' => 'number', 'value' => '1' },
+      ],
+    };
+  } else {
+    my @pulled = ();
+    foreach my $child (@{$node->{cld}}) {
+      if (defined($child)) {
+        push @pulled, pull_postfix_incdec($child);
+      }
+    }
+
+    return @pulled;
+  }
+}
+
 sub am_i_going_to_write_a_perl_compiler {
   my $node = shift;
 
   pull_assignments($node);
+  pull_postfix_incdec($node);
 
   return $node;
 }
