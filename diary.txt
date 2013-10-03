@@ -35,3 +35,4 @@ date:start:end:description
 03/10:1300:1330:Add regexes (only m// kind for now)
 03/10:1330:1500:Play around and give up. Got unless/postfixes working, added sort/keys.
 03/10:1640:1800:Really hating this assignment. Added another layer to fix up perl's retardedness
+03/10:1900:2300:String interpolation, functions, subses
