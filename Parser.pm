@@ -210,6 +210,10 @@ sub p_regexp {
   return p_leafget('regexp');
 }
 
+sub p_subtitution {
+  return p_leafget('substitute');
+}
+
 sub p_literal_op {
   my $op = $tok{match};
   my $ref = p_leaf('operator', consume());
@@ -279,6 +283,7 @@ sub p_simple_value {
     when ('string')     { return p_string();         }
     when ('number')     { return p_literal_number(); }
     when ('regexp')     { return p_regexp(); }
+    when ('substitute') { return p_subtitution(); }
     when ('parenbegin') { return p_expression_start(); }
     when ('arraybegin') { return p_expression_start(); }
     when ('blockbegin') { return p_expression_start(); }

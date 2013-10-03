@@ -147,9 +147,40 @@ sub pull_postfix_incdec {
   }
 }
 
+sub rewrite_substitutions {
+  my $node = shift;
+
+  # Shallow walk here because this is ridiculous
+  if ($node->{type} eq 'regex_match' && $node->{cld}->[1]->{type} eq 'substitute') {
+    my ($left_ref, $next_ref) = @{$node->{cld}};
+    %{$node} = (
+      'type' => 'assignment',
+      'cld' => [
+        $left_ref,
+        {
+          'type' => 'call',
+          'func' => '__p2p_re_subs',
+          'cld' => [
+            { 'type' => 'string', 'value' => $node->{operator} },
+            $left_ref,
+            $next_ref,
+          ],
+        },
+      ],
+    );
+  } else {
+    foreach my $child (@{$node->{cld}}) {
+      if (defined($child)) {
+        rewrite_substitutions($child);
+      }
+    }
+  }
+}
+
 sub am_i_going_to_write_a_perl_compiler {
   my $node = shift;
 
+  rewrite_substitutions($node);
   pull_assignments($node);
   pull_postfix_incdec($node);
 

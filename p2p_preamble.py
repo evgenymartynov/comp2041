@@ -6,7 +6,7 @@ __all__ = ('__p2p_argv __p2p_print __p2p_printf ' +
     '__p2p_chomp __p2p_split __p2p_join ' +
     '__p2p_pop __p2p_shift __p2p_push __p2p_unshift __p2p_reverse ' +
     '__p2p_io __p2p_io_null ' +
-    '__p2p_re_match ' +
+    '__p2p_re_match __p2p_re_subs ' +
     '__int __str __len __p2p_dict ' +
     '__p2p_sort __p2p_keys ' +
     '__re __p2p_group ').split()
@@ -68,6 +68,21 @@ def __p2p_re_match(op, string, regex):
   global __p2p_matchgroups
   __p2p_matchgroups = regex.search(string)
   return (op == '!~') ^ (__p2p_matchgroups is not None)
+
+def __p2p_re_subs(op, string, regex):
+  assert regex[0] == 's'
+  sep = regex[1]
+  flags = regex[regex.rindex(sep):]
+  regex = regex[2:-len(flags)]
+
+  pat = r'((\\.|[^{sep}\\])*){sep}(.*)'.format(sep=sep)
+  re_pat, _, repl = re.match(pat, regex).groups()
+  repl = repl.replace(r'\$', '$')
+
+  to_make = 0 if 'g' in flags else 1
+  result = re.sub(re_pat, repl, string, count=to_make)
+
+  return result
 
 def __p2p_group(num):
   return __p2p_matchgroups.group(num)

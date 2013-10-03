@@ -546,6 +546,7 @@ sub compile_node {
     when ('comment')          { compile_comment         ($node); }
     when ('number')           { compile_number          ($node); }
     when ('string')           { compile_string          ($node); }
+    when ('substitute')       { compile_string          ($node); }
     when ('regexp')           { compile_regexp          ($node); }
     when ('variable')         { compile_variable        ($node); }
     when ('range')            { compile_range           ($node); }
