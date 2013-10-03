@@ -303,8 +303,12 @@ sub compile_assignment {
 
   my $is_array =
       $lvalue_ref->{type} eq 'variable' && $lvalue_ref->{context} eq '@';
+  my $is_hash =
+      $lvalue_ref->{type} eq 'variable' && $lvalue_ref->{context} eq '%';
   if ($is_array && $rvalue_ref->{type} eq 'parenthesise') {
     $rvalue_ref->{type} = 'array_initialise';
+  } elsif ($is_hash && $rvalue_ref->{type} eq 'parenthesise') {
+    $rvalue_ref->{type} = 'hash_initialise';
   }
 
   compile_node($lvalue_ref);
@@ -328,6 +332,11 @@ sub compile_parenthesise {
 
 sub compile_array_initialise {
   _compile_bracketed('[', ']', shift);
+}
+
+sub compile_hash_initialise {
+  my $node = shift;
+  compile_function_call('__p2p_dict', @{$node->{cld}});
 }
 
 sub compile_foldl {
@@ -575,6 +584,7 @@ sub compile_node {
 
     when ('parenthesise')     { compile_parenthesise    ($node); }
     when ('array_initialise') { compile_array_initialise($node); }
+    when ('hash_initialise')  { compile_hash_initialise ($node); }
 
     when ('comma_sep_string_concat') { compile_comma_sep_string_concat($node); }
     when ('stringify')        { compile_stringify       ($node); }

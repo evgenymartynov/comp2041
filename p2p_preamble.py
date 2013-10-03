@@ -6,16 +6,22 @@ __all__ = ('__p2p_argv __p2p_print __p2p_printf ' +
     '__p2p_chomp __p2p_split __p2p_join ' +
     '__p2p_pop __p2p_shift __p2p_push __p2p_unshift __p2p_reverse ' +
     '__p2p_io __p2p_io_null ' +
-    '__int __str __len ').split()
+    '__int __str __len __p2p_dict ').split()
 
 __int, __str, __len = int, str, len
 __p2p_argv = sys.argv[1:]
+
+def __p2p_dict(*args):
+  return dict(zip(args[::2], args[1::2]))
 
 def __p2p_to_string(v):
   if type(v) is bool:
     return '1' if v else ''
   elif type(v) is list:
     return ''.join(map(__p2p_to_string, v))
+  elif type(v) is dict:
+    return ''.join(
+        [ __p2p_to_string(k) + __p2p_to_string(v) for k,v in v.iteritems() ])
   else:
     return str(v)
 

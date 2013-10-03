@@ -237,7 +237,15 @@ sub p_variable {
     my $type = $tok{type};
     expect($type);
 
-    push @accessors, p_expression_start();
+    if ($tok{type} eq 'word') {
+      # Using $hash{bareword} form of the hash
+      my @list = ();
+      push @list, consume()->{match} until $tok{type} eq 'blockend';
+
+      push @accessors, p_node_with_value('string', join ' ', @list);
+    } else {
+      push @accessors, p_expression_start();
+    }
 
     $type =~ s/begin/end/;
     expect($type);
@@ -256,6 +264,7 @@ sub p_simple_value {
     when ('number')     { return p_literal_number(); }
     when ('parenbegin') { return p_expression_start(); }
     when ('arraybegin') { return p_expression_start(); }
+    when ('blockbegin') { return p_expression_start(); }
     when ('list_op')    { return p_func_call(); }
 
     default           {
@@ -656,7 +665,7 @@ sub p_print_statement {
 
 sub p_expression_start {
   my $type = $tok{type};
-  my $gobble = $type ~~ ['parenbegin', 'arraybegin'];
+  my $gobble = $type ~~ ['parenbegin', 'arraybegin', 'blockbegin'];
 
   expect($type) if $gobble;
 
@@ -668,6 +677,7 @@ sub p_expression_start {
   if ($gobble) {
     $expression_ref = p_parenthesise($expression_ref);
     $expression_ref->{type} = 'array_initialise' if $type eq 'arrayend';
+    $expression_ref->{type} = 'hash_initialise' if $type eq 'blockend';
   }
 
   return $expression_ref;

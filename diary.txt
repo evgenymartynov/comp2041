@@ -29,3 +29,4 @@ date:start:end:description
 02/10:2200:2250:Added $#list notation & made compiler spit out nicer xrange()s
 02/10:2320:2330:Added pop/push/shift/unshift
 02/10:2340:2345:Added [] as array initialisers
+03/10:1130:1200:Added hashes with (,,), (=>), and {} initialisers
