@@ -353,18 +353,17 @@ sub p_expression_high_precedence_unary {
 }
 
 sub p_expression_regexp_comparison {
-  my @cld = ( p_expression_high_precedence_unary() );
+  my $left = p_expression_high_precedence_unary();
 
   while ($tok{type} eq 'regexp_comparison') {
-    push @cld, p_literal_op();
-    push @cld, p_expression_high_precedence_unary();
+    $left = {
+      'type' => 'regex_match',
+      'operator' => p_literal_op()->{operator},
+      'cld' => [ $left, p_expression_high_precedence_unary() ],
+    };
   }
 
-  if ($#cld) {
-    return p_node('foldl_regex', @cld);
-  } else {
-    return $cld[0];
-  }
+  return $left;
 }
 
 sub p_mul_expression {
