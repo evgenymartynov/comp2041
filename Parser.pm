@@ -284,7 +284,7 @@ sub p_simple_value {
     when ('list_op')    { return p_func_call(); }
 
     default           {
-      die parser_skip_to_next_statement('simple value', 'something else');
+      die parser_skip_to_next_statement('simple value', $tok{type});
     }
   }
 }
@@ -605,7 +605,7 @@ sub p_expression_rightward_list_op {
         return p_print_statement();
       }
 
-      when ('if') {
+      when (['if', 'unless']) {
         return p_if_expression();
       }
 
@@ -693,13 +693,51 @@ sub p_print_statement {
   return p_emit_cheat($func, $args);
 }
 
+sub p_expression_postfix_conditionals {
+  my $body_ref = p_expression_low_precedence_logical_ors();
+  return $body_ref if $tok{type} ne 'keyword';
+
+  given ($tok{match}) {
+    when (['if', 'unless']) {
+      my $negate = $tok{match} eq 'unless';
+      expect('keyword');
+
+      my $condition = p_expression_start();
+      if ($negate) {
+        $condition = {
+          'type' => 'unary',
+          'operator' => { 'value' => '!' },
+          'cld' => [ $condition ],
+        };
+      }
+
+      $body_ref = {
+        'type' => 'body',
+        'cld' => [ $body_ref ],
+      };
+
+      return {
+        'type' => 'if_expr',
+        'cld' => [
+          $condition,
+          $body_ref,
+        ],
+      };
+    }
+
+    default {
+      return $body_ref;
+    }
+  }
+}
+
 sub p_expression_start {
   my $type = $tok{type};
   my $gobble = $type ~~ ['parenbegin', 'arraybegin', 'blockbegin'];
 
   expect($type) if $gobble;
 
-  my $expression_ref = p_expression_low_precedence_logical_ors();
+  my $expression_ref = p_expression_postfix_conditionals();
 
   $type =~ s/begin/end/;
   expect($type) if $gobble;
@@ -731,14 +769,24 @@ sub p_body_expression {
 }
 
 sub p_if_expression {
+  my $negate = $tok{match} eq 'unless';
   expect('keyword');
-  return p_if_expression_internal();
+  return p_if_expression_internal($negate);
 }
 
 sub p_if_expression_internal {
+  my $negate = shift;
   my $condition_ref = p_expression_start();
   my $if_true = p_body_expression();
   my $if_false = undef;
+
+  if ($negate) {
+    $condition_ref = {
+      'type' => 'unary',
+      'operator' => { 'value' => '!' },
+      'cld' => [ $condition_ref ],
+    };
+  }
 
   if ($tok{type} eq 'keyword' && $tok{match} eq 'else') {
     expect('keyword');

@@ -6,7 +6,7 @@ my $pat_special = ",;'\"{}()";
 my $pat_variable = '0-9A-Za-z_';
 my $pat_kw = join '|', qw(
     print printf
-    if else elsif while for foreach
+    if unless else elsif while for foreach
     next last
 );
 
