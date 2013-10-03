@@ -2,6 +2,7 @@ package Parser;
 
 use strict;
 use Data::Dumper;
+use TryTiny;
 use feature qw(switch);
 
 our (@all_tokens, %tok);
@@ -16,15 +17,30 @@ sub peek {
   return $all_tokens[0];
 }
 
+sub parser_skip_to_next_statement {
+  my ($exp, $type) = @_;
+
+  my @skipped = ();
+  while (!($tok{type} ~~ ['semicolon', 'eof'])) {
+    push @skipped, consume();
+  }
+
+  my $comment = "# Parser error: expeted $exp got $type: " .
+      join ' ', (map { $_->{match} } @skipped);
+  return {
+    'type' => 'comment',
+    'value' => $comment,
+  };
+}
+
 sub expect {
   my $exp = shift;
   my $actual = shift @all_tokens;
   my $type = defined($actual) ? $actual->{type} : 'eof';
 
-  die("expected $exp but got $type instead;\n ",
-      Dumper($actual), "\n",
-      Dumper(\@all_tokens))
-      unless $exp eq $type;
+  if ($exp ne $type) {
+    die parser_skip_to_next_statement($exp, $type);
+  }
 
   %tok = %{peek()};
   return $actual;
@@ -268,8 +284,7 @@ sub p_simple_value {
     when ('list_op')    { return p_func_call(); }
 
     default           {
-      display(\@all_tokens);
-      die "simple_value: not sure what to do with this: ", Dumper(\%tok);
+      die parser_skip_to_next_statement('simple value', 'something else');
     }
   }
 }
@@ -760,7 +775,21 @@ sub p_foreach_expression {
 }
 
 sub p_statement {
-  my $result_ref = p_expression_start();
+  my $result_ref;
+
+  try {
+    $result_ref = p_expression_start();
+  } catch {
+    my $error = $_;
+
+    try {
+      my %node = %{$error};
+      $result_ref = \%node;
+    } catch {
+      print "Internal error:\n";
+      die $error;
+    }
+  };
 
   consume if $tok{type} eq 'semicolon';
 
