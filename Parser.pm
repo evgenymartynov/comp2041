@@ -73,7 +73,7 @@ sub is_equality {
 }
 
 sub is_additive {
-  my @ops = qw(+ -);
+  my @ops = qw(+ - .);
   return $tok{type} eq 'operator' && $tok{match} ~~ @ops;
 }
 
@@ -282,6 +282,8 @@ sub p_simple_value {
     when ('arraybegin') { return p_expression_start(); }
     when ('blockbegin') { return p_expression_start(); }
     when ('list_op')    { return p_func_call(); }
+
+    when ('parenend')   { return {}; }
 
     default           {
       die parser_skip_to_next_statement('simple value', $tok{type});
@@ -864,7 +866,7 @@ sub p_statement {
     }
   };
 
-  consume if $tok{type} eq 'semicolon';
+  consume if $tok{type} ~~ ['semicolon', 'blockend'];
 
   return $result_ref if defined $result_ref;
   die "statement: got undef as result of parsing; tokens: ", Dumper(\%tok);

@@ -366,7 +366,7 @@ sub compile_foldl {
   foreach my $item (@cld) {
     given ($item->{type}) {
       when ('operator') {
-        emit_token($item->{operator});
+        emit_token(convert_op($item->{operator}));
       }
 
       default {
@@ -631,6 +631,8 @@ sub compile_node {
     when ('comma_sep_string_concat') { compile_comma_sep_string_concat($node); }
     when ('stringify')        { compile_stringify       ($node); }
     when ('integrify')        { compile_integrify       ($node); }
+
+    when (undef)              { }
 
     default           {
       print "What are you doing? Got this: ";
