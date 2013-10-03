@@ -14,6 +14,7 @@ sub display {
 }
 
 sub peek {
+  die "Out of tokens" if !@all_tokens;
   return $all_tokens[0];
 }
 
@@ -852,7 +853,7 @@ sub p_statement {
   @current_statement = ();
   foreach my $ref (@all_tokens) {
     push @current_statement, $ref;
-    if ($ref->{type} ~~ ['blockbegin', 'blockend', 'semicolon', 'eof']) {
+    if (!exists($ref->{type}) || $ref->{type} ~~ ['blockbegin', 'blockend', 'semicolon', 'eof']) {
       last;
     }
   }
@@ -867,15 +868,15 @@ sub p_statement {
       my %node = %{$error};
       $result_ref = \%node;
 
-      consume() until
-          $tok{type} ~~ ['blockbegin', 'blockend', 'semicolon', 'eof'];
+      consume() while
+          !($tok{type} ~~ ['blockbegin', 'blockend', 'semicolon', 'eof']);
     } catch {
       print "Internal error:\n";
       die $error;
     }
   };
 
-  consume if $tok{type} ~~ ['semicolon', 'blockend'];
+  consume() if $tok{type} eq 'semicolon';
 
   return $result_ref if defined $result_ref;
   die "statement: got undef as result of parsing; tokens: ", Dumper(\%tok);
