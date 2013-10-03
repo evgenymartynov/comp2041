@@ -1,6 +1,6 @@
 #!/usr/bin/python2 -u
 
-import sys, re
+import sys, re, itertools
 
 __all__ = ('__p2p_argv __p2p_print __p2p_printf ' +
     '__p2p_chomp __p2p_split __p2p_join ' +
@@ -8,6 +8,7 @@ __all__ = ('__p2p_argv __p2p_print __p2p_printf ' +
     '__p2p_io __p2p_io_null ' +
     '__p2p_re_match ' +
     '__int __str __len __p2p_dict ' +
+    '__p2p_sort __p2p_keys ' +
     '__re __p2p_group ').split()
 
 __int, __str, __len, __re = int, str, len, re
@@ -70,6 +71,12 @@ def __p2p_re_match(op, string, regex):
 
 def __p2p_group(num):
   return __p2p_matchgroups.group(num)
+
+def __p2p_sort(*args):
+  return sorted(itertools.chain.from_iterable(args))
+
+def __p2p_keys(dct):
+  return dct.keys()
 
 def __p2p_io(fh):
   try:
