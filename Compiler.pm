@@ -416,6 +416,15 @@ sub compile_binary_op_expr {
   emit_token(')');
 }
 
+sub compile_function {
+  my $node = shift;
+
+  emit_keyword('def');
+  emit_identifier($node->{name});
+  emit_token('()');
+  compile_node($node->{cld}->[0]);
+}
+
 sub compile_if {
   my $node = shift;
   my ($cond_ref, $true_ref, $false_ref) = @{$node->{cld}};
@@ -567,6 +576,7 @@ sub compile_node {
     when ('call')             { compile_call            ($node); }
     when ('io')               { compile_io              ($node); }
 
+    when ('function')         { compile_function        ($node); }
     when ('if_expr')          { compile_if              ($node); }
     when ('while_expr')       { compile_while           ($node); }
     when ('for_expr')         { compile_for             ($node); }

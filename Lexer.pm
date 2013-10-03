@@ -8,6 +8,7 @@ my $pat_kw = join '|', qw(
     print printf
     if unless else elsif while for foreach
     next last
+    sub
 );
 
 my $pat_var_type = '\$|@|%';
@@ -55,6 +56,7 @@ my @patterns = (
 
   { 'type' => 'number',     're' => qr(-?([1-9][0-9]*|0)\b) },
   { 'type' => 'variable',   're' => "($pat_var_type)#?[$pat_variable]+" },
+  { 'type' => 'function',   're' => "&[$pat_variable]+" },
   { 'type' => 'operator',   're' => '\+\+|--|' . $pat_operators },
 
   { 'type' => 'string-rel', 're' => qr(\b(le|lt|ge|gt)\b) },

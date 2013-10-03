@@ -277,11 +277,27 @@ sub p_variable {
   return $node;
 }
 
+sub p_function_call {
+  my $func = substr $tok{match}, 1;
+  expect('function');
+
+  my $empty = { 'type' => 'empty', 'cld' => [] };
+
+  my $args = peek()->{type} eq 'semicolon' ? $empty : p_expression_funcargs();
+
+  return {
+    'type' => 'call',
+    'func' => $func,
+    'cld' => [ $args ]
+  };
+}
+
 sub p_simple_value {
   given ($tok{type}) {
     when ('variable')   { return p_variable();       }
     when ('string')     { return p_string();         }
     when ('number')     { return p_literal_number(); }
+    when ('function')   { return p_function_call();  }
     when ('regexp')     { return p_regexp(); }
     when ('substitute') { return p_subtitution(); }
     when ('parenbegin') { return p_expression_start(); }
@@ -742,6 +758,20 @@ sub p_expression_start {
   return $expression_ref;
 }
 
+sub p_expression_function {
+  expect('keyword');
+
+  my $name = expect('word')->{match};
+
+  my $body = p_body_expression();
+
+  return {
+    'type' => 'function',
+    'name' => $name,
+    'cld' => [ $body ],
+  };
+}
+
 sub p_expression_controlstructure {
   if ($tok{type} eq 'keyword') {
     given ($tok{match}) {
@@ -759,6 +789,10 @@ sub p_expression_controlstructure {
 
       when ('foreach') {
         return p_foreach_expression();
+      }
+
+      when ('sub') {
+        return p_expression_function();
       }
     }
   }
