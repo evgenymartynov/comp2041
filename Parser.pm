@@ -150,7 +150,7 @@ sub p_node_with_value {
 sub interpolate_string {
   my @cld = ();
   my $node = {
-    'type' => 'comma_sep_string_concat',  # Kind of cheating, but eh.
+    'type' => 'comma_sep_string_concat',
     'cld' => \@cld,
   };
 
@@ -176,16 +176,19 @@ sub interpolate_string {
   # At this point, we know we have to do it :(
 
   # Pull out things like /$(?!\d)\w+/
-  my $id_regex = qr((\$(?!\d)\w+)); # Capture group makes split return seps too
+  my $id_regex = qr((((\$|@)(?!\d)\w+)({[^]]+}|\[[A-Za-z0-9_]+\])?)); # Capture group makes split return seps too
   my @fragments = split $id_regex, $string;
   my $last_text_fragment = undef;
 
   while (@fragments) {
     my $text = shift @fragments;
+    shift @fragments;
     my $var  = shift @fragments;
+    shift @fragments;
+    my $accessors = shift @fragments;
 
     push @cld, p_node_with_value('string', $text) if $text;
-    push @cld, p_stringify(p_variable_from_string($var)) if defined($var);
+    push @cld, p_stringify(p_variable_from_string($var, $accessors)) if defined($var);
 
     $last_text_fragment = defined($var) ? undef : $text;
   }
@@ -233,14 +236,36 @@ sub p_func_call {
 }
 
 sub p_variable_from_string {
-  # TODO
   my $var = shift;
+  my $accessors = shift;
   my $prefix = substr $var, 0, 1;
   my $name = substr $var, 1;
+  my @cld = ();
+
+  while ($accessors) {
+    given (substr $accessors, 0, 1) {
+      when ('[') {
+        my $acs = $accessors =~ s/^\[([^]]*)\].*/$1/r;
+        push @cld, { 'type' => 'number', 'value' => $acs};
+        $accessors = substr($accessors, (length $acs)+2);
+      }
+
+      when ('{') {
+        my $acs = $accessors =~ s/^{([^}]*)}.*/$1/r;
+        push @cld, { 'type' => 'string', 'value' => $acs};
+        $accessors = substr($accessors, (length $acs)+2);
+      }
+
+      default {
+        push @cld, { 'type' => 'string', 'value' => 'wat'};
+      }
+    }
+  }
 
   my $node = p_node('variable');
   $node->{value} = $name;
   $node->{context} = $prefix;
+  $node->{cld} = \@cld;
   return $node;
 }
 

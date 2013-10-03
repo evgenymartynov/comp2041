@@ -11,13 +11,6 @@ __all__ = ('__p2p_argv __p2p_print __p2p_printf ' +
     '__p2p_sort __p2p_keys ' +
     '__re __p2p_group ').split()
 
-__int, __str, __len, __re = int, str, len, re
-__p2p_argv = sys.argv[1:]
-__p2p_matchgroups = None
-
-def __p2p_dict(*args):
-  return dict(zip(args[::2], args[1::2]))
-
 def __p2p_to_string(v):
   if type(v) is bool:
     return '1' if v else ''
@@ -28,6 +21,13 @@ def __p2p_to_string(v):
         [ __p2p_to_string(k) + __p2p_to_string(v) for k,v in v.iteritems() ])
   else:
     return str(v)
+
+__int, __str, __len, __re = int, __p2p_to_string, len, re
+__p2p_argv = sys.argv[1:]
+__p2p_matchgroups = None
+
+def __p2p_dict(*args):
+  return dict(zip(args[::2], args[1::2]))
 
 def __p2p_print(*args):
   for v in args:
