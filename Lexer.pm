@@ -16,6 +16,9 @@ my $pat_var_type = '\$|@|%';
 my $pat_named_unaries = join '|', qw(chomp pop shift);
 my $pat_list_operators = join '|', qw(split join push unshift reverse);
 
+my $pat_regexp_comparison = '=~|!~';
+my $pat_regexp_body = '/(\\\.|[^/\\\])*/';
+
 my $pat_comparisons = join '|', qw(<= >= == != < >);
 my $pat_operators = join '|', qw(\+ - \*\* / % \* x \.);
 
@@ -41,6 +44,9 @@ my @patterns = (
   { 'type' => 'range',      're' => '\.\.' },
 
   { 'type' => 'bw-shift',   're' => qr(<<|>>) },
+
+  { 'type' => 'regexp_comparison', 're' => $pat_regexp_comparison },
+  { 'type' => 'regexp',     're' => 'm' . $pat_regexp_body },
 
   { 'type' => 'comparison', 're' => $pat_comparisons },
   { 'type' => 'assignment', 're' => qr(($pat_operators)=) },

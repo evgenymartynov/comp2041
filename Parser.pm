@@ -205,6 +205,10 @@ sub p_literal_number {
   return p_leafget('number');
 }
 
+sub p_regexp {
+  return p_leafget('regexp');
+}
+
 sub p_literal_op {
   my $op = $tok{match};
   my $ref = p_leaf('operator', consume());
@@ -273,6 +277,7 @@ sub p_simple_value {
     when ('variable')   { return p_variable();       }
     when ('string')     { return p_string();         }
     when ('number')     { return p_literal_number(); }
+    when ('regexp')     { return p_regexp(); }
     when ('parenbegin') { return p_expression_start(); }
     when ('arraybegin') { return p_expression_start(); }
     when ('blockbegin') { return p_expression_start(); }
@@ -344,12 +349,27 @@ sub p_expression_high_precedence_unary {
   };
 }
 
-sub p_mul_expression {
+sub p_expression_regexp_comparison {
   my @cld = ( p_expression_high_precedence_unary() );
+
+  while ($tok{type} eq 'regexp_comparison') {
+    push @cld, p_literal_op();
+    push @cld, p_expression_high_precedence_unary();
+  }
+
+  if ($#cld) {
+    return p_node('foldl_regex', @cld);
+  } else {
+    return $cld[0];
+  }
+}
+
+sub p_mul_expression {
+  my @cld = ( p_expression_regexp_comparison() );
 
   while (is_multiplicative) {
     push @cld, p_literal_op();
-    push @cld, p_expression_high_precedence_unary();
+    push @cld, p_expression_regexp_comparison();
   }
 
   if ($#cld) {

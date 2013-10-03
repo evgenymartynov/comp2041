@@ -6,6 +6,7 @@ __all__ = ('__p2p_argv __p2p_print __p2p_printf ' +
     '__p2p_chomp __p2p_split __p2p_join ' +
     '__p2p_pop __p2p_shift __p2p_push __p2p_unshift __p2p_reverse ' +
     '__p2p_io __p2p_io_null ' +
+    '__p2p_re_match ' +
     '__int __str __len __p2p_dict ').split()
 
 __int, __str, __len = int, str, len
@@ -59,6 +60,20 @@ def __p2p_unshift(lst, *args):
 
 def __p2p_reverse(*args):
   return list(reversed(args))
+
+def __p2p_re_match(op, string, regex):
+  negate = (op == '!~')
+
+  re_type = regex[0]
+  if re_type == '/':
+    regex = 'm' + regex
+    re_type = 'm'
+
+  regex = re.compile(regex[2:-1]);
+  if re_type == 'm':
+    return regex.match(string) is not None
+  else:
+    raise Exception("unknown regex optype :(")
 
 def __p2p_io(fh):
   try:

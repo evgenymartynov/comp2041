@@ -358,6 +358,28 @@ sub compile_foldl {
   }
 }
 
+sub compile_foldl_regex {
+  my $node = shift @_;
+  my @cld = @{$node->{cld}};
+
+  my $left_ref = shift @cld;
+  while (@cld) {
+    my ($op, $next_ref) = (shift(@cld), shift(@cld));
+
+    $left_ref = {
+      'type' => 'call',
+      'func' => '__p2p_re_match',
+      'cld' => [
+        { 'type' => 'string', 'value' => $op->{value} },
+        $left_ref,
+        $next_ref,
+      ],
+    };
+  }
+
+  compile_node($left_ref);
+}
+
 sub compile_unary {
   my $node = shift;
   my $ref = $node->{cld}->[0];
@@ -555,6 +577,7 @@ sub compile_node {
     when ('comment')          { compile_comment         ($node); }
     when ('number')           { compile_number          ($node); }
     when ('string')           { compile_string          ($node); }
+    when ('regexp')           { compile_string          ($node); }
     when ('variable')         { compile_variable        ($node); }
     when ('range')            { compile_range           ($node); }
     when ('last_item_index')  { compile_last_item_index ($node); }
@@ -564,6 +587,7 @@ sub compile_node {
     when ('comma')            { compile_comma           ($node); }
 
     when ('foldl')            { compile_foldl           ($node); }
+    when ('foldl_regex')      { compile_foldl_regex     ($node); }
     when ('unary')            { compile_unary           ($node); }
 
     when ('assignment')       { compile_assignment      ($node); }
