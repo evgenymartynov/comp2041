@@ -5,7 +5,7 @@ use Data::Dumper;
 use TryTiny;
 use feature qw(switch);
 
-our (@all_tokens, %tok);
+our (@all_tokens, %tok, @current_statement);
 
 sub display {
   local $Data::Dumper::Terse = 1;
@@ -20,13 +20,8 @@ sub peek {
 sub parser_skip_to_next_statement {
   my ($exp, $type) = @_;
 
-  my @skipped = ();
-  while (!($tok{type} ~~ ['semicolon', 'eof'])) {
-    push @skipped, consume();
-  }
-
   my $comment = "# Parser error: expeted $exp got $type: " .
-      join ' ', (map { $_->{match} } @skipped);
+      join ' ', (map { $_->{match} } @current_statement);
   return {
     'type' => 'comment',
     'value' => $comment,
@@ -775,8 +770,15 @@ sub p_foreach_expression {
 }
 
 sub p_statement {
-  my $result_ref;
+  @current_statement = ();
+  foreach my $ref (@all_tokens) {
+    push @current_statement, $ref;
+    if ($ref->{type} ~~ ['blockbegin', 'blockend', 'semicolon', 'eof']) {
+      last;
+    }
+  }
 
+  my $result_ref;
   try {
     $result_ref = p_expression_start();
   } catch {
@@ -785,6 +787,9 @@ sub p_statement {
     try {
       my %node = %{$error};
       $result_ref = \%node;
+
+      consume() until
+          $tok{type} ~~ ['blockbegin', 'blockend', 'semicolon', 'eof'];
     } catch {
       print "Internal error:\n";
       die $error;
@@ -817,6 +822,7 @@ sub p_program {
 
 sub parse {
   @all_tokens = @{shift @_};
+  @current_statement = ();
   %tok = %{peek()};
 
   # display(\@all_tokens);

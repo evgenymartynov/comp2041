@@ -31,3 +31,4 @@ date:start:end:description
 02/10:2340:2345:Added [] as array initialisers
 03/10:1130:1200:Added hashes with (,,), (=>), and {} initialisers
 03/10:1220:1240:Imported Try::Tiny package, now handling syntax errors in input ^_^
+03/10:1240:1300:Refine error handling
