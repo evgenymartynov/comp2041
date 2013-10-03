@@ -594,7 +594,7 @@ sub compile_node {
     when ('stringify')        { compile_stringify       ($node); }
     when ('integrify')        { compile_integrify       ($node); }
 
-    when (undef)              { }
+    when ('empty')            { } # do nothing
 
     default           {
       print "What are you doing? Got this: ";

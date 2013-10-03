@@ -284,7 +284,7 @@ sub p_simple_value {
     when ('blockbegin') { return p_expression_start(); }
     when ('list_op')    { return p_func_call(); }
 
-    when ('parenend')   { return {}; }
+    when ('parenend')   { return { 'type' => 'empty', 'cld' => [] }; }
 
     default           {
       die parser_skip_to_next_statement('simple value', $tok{type});
