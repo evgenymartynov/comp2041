@@ -263,7 +263,7 @@ sub compile_call {
   my $func = $node->{func};
   emit_identifier($func);
   emit_token("(");
-  compile_node($node->{cld}->[0]) if defined $node->{cld}->[0];
+  compile_comma_sep_expr_onlist(@{$node->{cld}});
   emit_token(")");
 }
 
