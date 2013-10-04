@@ -9,7 +9,7 @@ sub cp_add {
   $x2 = @_[2];
   $y2 = @_[3];
 
-  return [$x1 + $x2, $y1 + $y2];
+  return ($x1 + $x2, $y1 + $y2);
 }
 
 @sum = &cp_add(1, 2, 3, 4);
