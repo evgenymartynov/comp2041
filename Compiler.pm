@@ -390,8 +390,8 @@ sub compile_unary {
 
 sub compile_binary_op_expr {
   my $node = shift;
-  my $lop_ref = shift $node->{cld};
-  my $rop_ref = shift $node->{cld};
+  my $lop_ref = shift @{$node->{cld}};
+  my $rop_ref = shift @{$node->{cld}};
   my $coercer = get_coercer($node->{operator});
 
   emit_token('(');
@@ -401,7 +401,7 @@ sub compile_binary_op_expr {
     emit_token(convert_op($node->{operator}));
     compile_node($coercer->($rop_ref));
 
-    $rop_ref = shift $node->{cld};
+    $rop_ref = shift @{$node->{cld}};
   }
 
   emit_token(')');
@@ -463,7 +463,7 @@ sub compile_for {
   emit_keyword('while');
   compile_node($cond_ref);
 
-  # push $body_ref->{cld}, $post_ref;
+  # push @{$body_ref->{cld}}, $post_ref;
 
   compile_node($body_ref);
 }
@@ -497,7 +497,7 @@ sub compile_body {
   my $node = shift;
 
   $cs{depth}++;
-  unshift $cs{locals}, {};
+  unshift @{$cs{locals}}, {};
 
   emit_token(':');
 
@@ -507,7 +507,7 @@ sub compile_body {
   }
 
   $cs{depth}--;
-  shift $cs{locals};
+  shift @{$cs{locals}};
 
   emit_statement_begin();
 }

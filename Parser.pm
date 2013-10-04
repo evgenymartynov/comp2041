@@ -293,13 +293,15 @@ sub p_variable_from_string {
   while ($accessors) {
     given (substr $accessors, 0, 1) {
       when ('[') {
-        my $acs = $accessors =~ s/^\[([^]]*)\].*/$1/r;
+        my $acs = $accessors;
+        $acs =~ s/^\[([^]]*)\].*/$1/;
         push @cld, { 'type' => 'number', 'value' => $acs};
         $accessors = substr($accessors, (length $acs)+2);
       }
 
       when ('{') {
-        my $acs = $accessors =~ s/^{([^}]*)}.*/$1/r;
+        my $acs = $accessors;
+        $acs =~ s/^{([^}]*)}.*/$1/;
         push @cld, { 'type' => 'string', 'value' => $acs};
         $accessors = substr($accessors, (length $acs)+2);
       }
@@ -893,7 +895,7 @@ sub p_body_expression {
   expect('blockbegin');
 
   while ($tok{type} ne 'blockend') {
-    push $node->{cld}, p_statement();
+    push @{$node->{cld}}, p_statement();
   }
 
   expect('blockend');
@@ -1017,7 +1019,7 @@ sub p_program {
   };
 
   while ($tok{type} ne 'eof') {
-    push $node->{cld}, p_statement();
+    push @{$node->{cld}}, p_statement();
   }
 
   return $node;
