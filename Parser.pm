@@ -190,11 +190,34 @@ sub actually_interpolate {
   my @fragments = split $id_regex, $string;
   my $last_text_fragment = undef;
 
+  # Every second and fourth capgroup are garbage: ignore them
+  my @temp = ();
+  while (@fragments) {
+    push @temp, shift @fragments;
+    shift @fragments;
+    push @temp, shift @fragments;
+    shift @fragments;
+    push @temp, shift @fragments;
+  }
+  @fragments = @temp;
+
+  @temp = ();
+  while (@fragments) {
+    my $str = shift @fragments;
+    my $var = shift @fragments;
+    my $acs = shift @fragments;
+
+    if (substr($str, -1) eq '\\') {
+      unshift @fragments, ($str . $var . ($acs || '') . (shift @fragments));
+    } else {
+      push @temp, $str, $var, $acs;
+    }
+  }
+  @fragments = @temp;
+
   while (@fragments) {
     my $text = shift @fragments;
-    shift @fragments;
     my $var  = shift @fragments;
-    shift @fragments;
     my $accessors = shift @fragments;
 
     push @cld, p_node_with_value('string', $text) if $text;
