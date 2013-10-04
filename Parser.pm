@@ -946,11 +946,13 @@ sub p_for_expression {
   my @cld = ();
   push @cld, p_expression_start(); expect('semicolon');
   push @cld, p_expression_start(); expect('semicolon');
-  push @cld, p_expression_start();
+  my $post_op = p_expression_start();
 
   expect('parenend');
 
   my $body_ref = p_body_expression();
+  push @{$body_ref->{cld}}, $post_op;
+
   return p_node('for_expr', @cld, $body_ref);
 }
 

@@ -455,8 +455,7 @@ sub compile_while {
 sub compile_for {
   my $node = shift;
 
-  my ($init_ref, $cond_ref, $post_ref, $body_ref) = @{$node->{cld}};
-  # TODO: run $post_ref on "continue"
+  my ($init_ref, $cond_ref, $body_ref) = @{$node->{cld}};
 
   compile_node($init_ref);
   emit_statement_begin();
@@ -464,8 +463,7 @@ sub compile_for {
   emit_keyword('while');
   compile_node($cond_ref);
 
-  # TODO: make continue work
-  push $body_ref->{cld}, $post_ref;
+  # push $body_ref->{cld}, $post_ref;
 
   compile_node($body_ref);
 }
