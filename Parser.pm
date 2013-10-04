@@ -813,6 +813,10 @@ sub p_expression_function {
 
   my $name = expect('word')->{match};
 
+  if ($tok{type} eq 'parenbegin') {
+    consume() until $tok{type} eq 'blockbegin';
+  }
+
   my $body = p_body_expression();
 
   return {
@@ -848,7 +852,7 @@ sub p_expression_controlstructure {
   }
 
   # Default case
-  return p_statement();
+  return p_expression_start();
 }
 
 sub p_body_expression {
@@ -860,7 +864,7 @@ sub p_body_expression {
   expect('blockbegin');
 
   while ($tok{type} ne 'blockend') {
-    push $node->{cld}, p_expression_controlstructure();
+    push $node->{cld}, p_statement();
   }
 
   expect('blockend');
@@ -948,7 +952,7 @@ sub p_statement {
 
   my $result_ref;
   try {
-    $result_ref = p_expression_start();
+    $result_ref = p_expression_controlstructure();
   } catch {
     my $error = $_;
 
@@ -977,7 +981,7 @@ sub p_program {
   };
 
   while ($tok{type} ne 'eof') {
-    push $node->{cld}, p_expression_controlstructure();
+    push $node->{cld}, p_statement();
   }
 
   return $node;
