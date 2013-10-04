@@ -63,7 +63,7 @@ def __p2p_unshift(lst, *args):
   return len(lst)
 
 def __p2p_reverse(*args):
-  return list(reversed(args))
+  return list(itertools.chain.from_iterable(args))[::-1]
 
 def __p2p_re_match(op, string, regex):
   global __p2p_matchgroups
