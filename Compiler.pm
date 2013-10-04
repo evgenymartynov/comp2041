@@ -412,7 +412,7 @@ sub compile_function {
 
   emit_keyword('def');
   emit_identifier($node->{name});
-  emit_token('()');
+  emit_token('(*args)');
   compile_node($node->{cld}->[0]);
 }
 
@@ -602,6 +602,7 @@ sub compile {
     'STDIN' => 'sys.stdin',
     'STDOUT' => 'sys.stdout',
     'STDERR' => 'sys.stderr',
+    '_' => 'args',
     map { ("$_", "__p2p_group($_)") } (1..10),
   };
 

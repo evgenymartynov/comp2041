@@ -25,6 +25,9 @@ my $pat_operators = join '|', qw(\+ - \*\* / % \* x \.);
 my @patterns = (
   { 'type' => 'comment',    're' => qr(#.*\n), 'chomp' => 1 },
 
+  # Ignore "my $x;"
+  { 'type' => 'my',         're' => qr(\bmy\b), 'ignore' => 1 },
+
   { 'type' => 'string',     're' => '"(\\\.|[^"\\\])*"' },
   { 'type' => 'string',     're' => '\'(\\\.|[^\'\\\])*\'' },
 
