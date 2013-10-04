@@ -201,6 +201,7 @@ sub actually_interpolate {
   }
   @fragments = @temp;
 
+  # Combine fragments if they end with a backslash (that must escape the sigil)
   @temp = ();
   while (@fragments) {
     my $str = shift @fragments;
