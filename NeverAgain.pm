@@ -177,11 +177,26 @@ sub rewrite_substitutions {
   }
 }
 
+sub pull_silly_nodes {
+  my $node = shift;
+
+  while ($node->{type} eq 'comma' && $#{$node->{cld}} == 0) {
+    %{$node} = %{$node->{cld}->[0]};
+  }
+
+  foreach my $child (@{$node->{cld}}) {
+    if (defined($child)) {
+      pull_silly_nodes($child);
+    }
+  }
+}
+
 sub am_i_going_to_write_a_perl_compiler {
   my $node = shift;
 
   rewrite_substitutions($node);
   pull_assignments($node);
+  pull_silly_nodes($node);
   pull_postfix_incdec($node);
 
   return $node;

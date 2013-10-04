@@ -815,6 +815,11 @@ sub p_expression_start {
   my $type = $tok{type};
   my $gobble = $type ~~ ['parenbegin', 'arraybegin', 'blockbegin'];
 
+  # Safeguard against empty expressions (i.e. ;;;;)
+  if ($tok{type} eq 'semicolon') {
+    return { 'type' => 'empty', 'cld' => [] };
+  }
+
   expect($type) if $gobble;
 
   my $expression_ref = p_expression_postfix_conditionals();
@@ -943,10 +948,15 @@ sub p_for_expression {
   expect('keyword');
   expect('parenbegin');
 
-  my @cld = ();
-  push @cld, p_expression_start(); expect('semicolon');
-  push @cld, p_expression_start(); expect('semicolon');
+  my $initialis = p_expression_start(); expect('semicolon');
+  my $condition = p_expression_start(); expect('semicolon');
   my $post_op = p_expression_start();
+
+  if ($condition->{type} eq 'empty') {
+    $condition = p_node_with_value('number', '1');
+  }
+
+  my @cld = ($initialis, $condition);
 
   expect('parenend');
 
