@@ -178,7 +178,7 @@ sub interpolate_string {
 }
 
 sub actually_interpolate {
-  my $string = shift;
+  my ($string, $force_raw) = @_;
 
   my @cld = ();
   my $node = {
@@ -186,8 +186,7 @@ sub actually_interpolate {
     'cld' => \@cld,
   };
 
-  # Pull out things like /$(?!\d)\w+/
-  my $id_regex = qr((((\$|@)(?!\d)\w+)({[^]]+}|\[[A-Za-z0-9_]+\])?)); # Capture group makes split return seps too
+  my $id_regex = qr((((\$|@)\w+)({[^]]+}|\[[A-Za-z0-9_]+\])?)); # Capture group makes split return seps too
   my @fragments = split $id_regex, $string;
   my $last_text_fragment = undef;
 
@@ -199,6 +198,7 @@ sub actually_interpolate {
     my $accessors = shift @fragments;
 
     push @cld, p_node_with_value('string', $text) if $text;
+    if ($text && $force_raw) { $cld[-1]->{'raw_string'} = 1; }
     push @cld, p_stringify(p_variable_from_string($var, $accessors)) if defined($var);
 
     $last_text_fragment = defined($var) ? undef : $text;
@@ -227,7 +227,7 @@ sub p_regexp {
   }
   $match = substr $match, 2, -1;  # Strip the m/ and /
 
-  return p_node('regexp', actually_interpolate($match));
+  return p_node('regexp', actually_interpolate($match, 1));
 }
 
 sub p_subtitution {
