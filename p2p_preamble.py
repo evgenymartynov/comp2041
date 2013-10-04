@@ -6,7 +6,7 @@ __all__ = ('__p2p_argv __p2p_print __p2p_printf ' +
     '__p2p_chomp __p2p_split __p2p_join ' +
     '__p2p_pop __p2p_shift __p2p_push __p2p_unshift __p2p_reverse ' +
     '__p2p_io __p2p_io_null ' +
-    '__p2p_re_match __p2p_re_subs ' +
+    '__p2p_re_match __p2p_re_subs __p2p_substr __p2p_grep ' +
     '__int __str __len __p2p_dict ' +
     '__p2p_sort __p2p_keys ' +
     '__re __p2p_group ').split()
@@ -43,6 +43,7 @@ def __p2p_chomp(string):
 def __p2p_split(pat=None, expr=None, limit=None):
   if pat is None: pat = re.compile('\s+')
   limit = limit - 1 if limit is not None else 0
+  if pat == '': return list(expr);
   return re.split(pat, expr, limit)
 
 def __p2p_join(expr, items):
@@ -83,6 +84,13 @@ def __p2p_re_subs(op, string, regex):
   result = re.sub(re_pat, repl, string, count=to_make)
 
   return result
+
+def __p2p_substr(string, start=0, length=None):
+  return string[start: length or len(string)]
+
+def __p2p_grep(regex, *args):
+  args = itertools.chain.from_iterable(args)
+  return [ arg for arg in args if regex.match(arg) ]
 
 def __p2p_group(num):
   return __p2p_matchgroups.group(num)

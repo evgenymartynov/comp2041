@@ -244,18 +244,9 @@ sub compile_string {
 sub compile_regexp {
   my $node = shift;
 
-  my $regexp = $node->{value};
-  my $type = substr $regexp, 0, 1;
-  if ($type eq '/') {
-    $type = 'm';
-    $regexp = "m$regexp";
-  }
-
-  $regexp = substr $regexp, 2, -1;
-
   compile_function_call(
       '__re.compile',
-      { 'type' => 'string', 'value' => $regexp }
+      $node->{cld}->[0],
   );
 }
 

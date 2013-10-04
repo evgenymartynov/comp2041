@@ -14,7 +14,7 @@ my $pat_kw = join '|', qw(
 my $pat_var_type = '\$|@|%';
 
 my $pat_named_unaries = join '|', qw(chomp pop shift);
-my $pat_list_operators = join '|', qw(split join push unshift sort reverse keys);
+my $pat_list_operators = join '|', qw(split join push unshift sort reverse keys grep substr return);
 
 my $pat_regexp_comparison = '=~|!~';
 my $pat_regexp_body = '(\\\.|[^/\\n\\\])*';

@@ -174,6 +174,17 @@ sub interpolate_string {
   }
 
   # At this point, we know we have to do it :(
+  actually_interpolate($string);
+}
+
+sub actually_interpolate {
+  my $string = shift;
+
+  my @cld = ();
+  my $node = {
+    'type' => 'comma_sep_string_concat',
+    'cld' => \@cld,
+  };
 
   # Pull out things like /$(?!\d)\w+/
   my $id_regex = qr((((\$|@)(?!\d)\w+)({[^]]+}|\[[A-Za-z0-9_]+\])?)); # Capture group makes split return seps too
@@ -210,7 +221,13 @@ sub p_literal_number {
 }
 
 sub p_regexp {
-  return p_leafget('regexp');
+  my $match = expect('regexp')->{match};
+  if ($match !~ m#^m#) {
+    $match = "m$match";
+  }
+  $match = substr $match, 2, -1;  # Strip the m/ and /
+
+  return p_node('regexp', actually_interpolate($match));
 }
 
 sub p_subtitution {
@@ -231,6 +248,13 @@ sub p_comment {
 sub p_func_call {
   my $func = $tok{match};
   consume();
+
+  # This is not a func per se
+  if ($func eq 'return') {
+    my $node = p_node('call', p_expression_funcargs());
+    $node->{func} = 'return';
+    return $node;
+  }
 
   return p_emit_cheat($func, p_expression_funcargs());
 }
@@ -319,6 +343,7 @@ sub p_function_call {
 
 sub p_simple_value {
   given ($tok{type}) {
+    when ('comment')    { return p_comment();       }
     when ('variable')   { return p_variable();       }
     when ('string')     { return p_string();         }
     when ('number')     { return p_literal_number(); }
@@ -952,11 +977,7 @@ sub p_program {
   };
 
   while ($tok{type} ne 'eof') {
-    if ($tok{type} eq 'comment') {
-      push $node->{cld}, p_comment();
-    } else {
-      push $node->{cld}, p_expression_controlstructure();
-    }
+    push $node->{cld}, p_expression_controlstructure();
   }
 
   return $node;
