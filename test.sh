@@ -9,6 +9,6 @@ for f in examples/*.pl; do
   echo "Doing $f < $input"
 
   diff -q \
-      <(PYTHONPATH=. timeout -k 1 0.2 python <(./perl2python "$f") < $input | tail -n 10) \
-      <(timeout -k 1 0.2 perl "$f" < $input 2>&1 | tail -n 10)
+      <(PYTHONPATH=. timeout -k 1 2 python <(./perl2python "$f") < $input | tail -n 10) \
+      <(timeout -k 1 2 perl "$f" < $input 2>&1 | tail -n 10)
 done
