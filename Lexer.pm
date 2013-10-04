@@ -3,7 +3,7 @@ use strict;
 
 my $pat_space = " \t\n";
 my $pat_special = ",;'\"{}()";
-my $pat_variable = '0-9A-Za-z_';
+my $pat_variable = '0-9A-Za-z_.';
 my $pat_kw = join '|', qw(
     print printf
     if unless else elsif while for foreach

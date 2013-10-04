@@ -5,7 +5,7 @@ import sys, re, itertools
 __all__ = ('__p2p_argv __p2p_print __p2p_printf ' +
     '__p2p_chomp __p2p_split __p2p_join ' +
     '__p2p_pop __p2p_shift __p2p_push __p2p_unshift __p2p_reverse ' +
-    '__p2p_io __p2p_io_null ' +
+    '__p2p_io __p2p_io_null __p2p_io_linenr ' +
     '__p2p_re_match __p2p_re_subs __p2p_substr __p2p_grep ' +
     '__int __str __len __p2p_dict ' +
     '__p2p_sort __p2p_keys ' +
@@ -108,15 +108,20 @@ def __p2p_io(fh):
     return None
 
 def __p2p_io_nullgen_create():
+  global __p2p_last_linenr
+
   files = [ sys.stdin ] + map(open, sys.argv[1:])
   for f in files:
+    __p2p_last_linenr = 0
     while 1:
       try:
+        __p2p_last_linenr += 1
         yield f.readline()
       except:
         break
 
 __p2p_io_nullgen = __p2p_io_nullgen_create()
+__p2p_last_linenr = 0
 
 def __p2p_io_null():
   global __p2p_io_nullgen
@@ -125,3 +130,7 @@ def __p2p_io_null():
   except StopIteration:
     __p2p_io_nullgen = __p2p_io_nullgen_create()  # Reset <> as per perl spec
     return None
+
+def __p2p_io_linenr():
+  global __p2p_last_linenr
+  return __p2p_last_linenr

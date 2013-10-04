@@ -603,6 +603,7 @@ sub compile {
     'STDOUT' => 'sys.stdout',
     'STDERR' => 'sys.stderr',
     '_' => 'args',
+    '.' => '__p2p_io_linenr()',
     map { ("$_", "__p2p_group($_)") } (1..10),
   };
 
