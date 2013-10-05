@@ -690,7 +690,11 @@ sub p_expression_comma {
     push @cld, p_expression_loopcontrol();
   }
 
-  return p_node('comma', @cld);
+  if ($#cld) {
+    return p_node('comma', @cld);
+  } else {
+    return $cld[0];
+  }
 }
 
 sub p_loopcontrol_expression {
@@ -778,7 +782,8 @@ sub p_print_statement {
 
 sub p_expression_postfix_conditionals {
   my $body_ref = p_expression_low_precedence_logical_ors();
-  return $body_ref if $tok{type} ne 'keyword';
+  return $body_ref
+      if ($tok{type} ne 'keyword' || $body_ref->{type} eq 'comment');
 
   given ($tok{match}) {
     when (['if', 'unless']) {

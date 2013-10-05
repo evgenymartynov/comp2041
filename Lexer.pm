@@ -57,7 +57,7 @@ my @patterns = (
   { 'type' => 'regexp',     're' => "m?/$pat_regexp_body/" },
   { 'type' => 'substitute', 're' => "s/$pat_regexp_body/$pat_regexp_body/[rg]*" },
 
-  { 'type' => 'number',     're' => qr(-?([1-9][0-9]*|0)\b) },
+  { 'type' => 'number',     're' => qr(-?([0-9]+|[0-9]*\.[0-9]*)\b) },
   { 'type' => 'variable',   're' => "($pat_var_type)#?[$pat_variable]+" },
   { 'type' => 'function',   're' => "&[$pat_variable]+" },
   { 'type' => 'operator',   're' => '\+\+|--|' . $pat_operators },
