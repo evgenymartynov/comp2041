@@ -41,3 +41,4 @@ date:start:end:description
 08/10:2250:2300:Change int() casts to float(), seems to work
 08/10:2300:2315:Break Linux and end up without sound. Get sad, have a cry, fix sound, listen to music.
 08/10:2315:2359:Working on string interpolation lexer, fixed top-level lexer's multiline strings
+09/10:0000:0135:Kill me. Wrote string interpolation lexer. Perl can go die now.

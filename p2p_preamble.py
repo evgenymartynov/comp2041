@@ -33,7 +33,7 @@ __p2p_argv = sys.argv[1:]
 __p2p_matchgroups = None
 
 def __p2p_dict(*args):
-  return dict(zip(args[::2], args[1::2]))
+  return dict(zip(map(str, args[::2]), args[1::2]))
 
 def __p2p_print(*args):
   for v in args:

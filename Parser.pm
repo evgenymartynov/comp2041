@@ -4,6 +4,7 @@ use strict;
 use Data::Dumper;
 use TryTiny;
 use feature qw(switch);
+use StringInterpolator;
 
 our (@all_tokens, %tok, @current_statement);
 
@@ -174,6 +175,7 @@ sub interpolate_string {
   }
 
   # At this point, we know we have to do it :(
+  return StringInterpolator::interpolate_string($string);
   return actually_interpolate($string);
 }
 
