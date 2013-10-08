@@ -174,7 +174,7 @@ sub interpolate_string {
   }
 
   # At this point, we know we have to do it :(
-  actually_interpolate($string);
+  return actually_interpolate($string);
 }
 
 sub actually_interpolate {

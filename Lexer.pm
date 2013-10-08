@@ -87,13 +87,18 @@ sub get_next_token {
   my ($data, $match, $tok_type, $ignore, $chomp) = (shift, undef, undef, 0, 0);
 
   foreach my $pattern (@patterns) {
-    my $re = qr(^($pattern->{re}));  # Only match tokens at start of the line
+    my $re = qr(^($pattern->{re}))s;  # Only match tokens at start of the line
 
     if ($data =~ $re) {
       $match = $1;
       $tok_type = $pattern->{type};
       $ignore = $pattern->{ignore};
       $chomp = $pattern->{chomp};
+
+      if ($tok_type eq 'string') {
+        # This really ought to be escaped in Perl
+        $match =~ s/\n/\\n/;
+      }
 
       last;
     }
