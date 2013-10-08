@@ -38,3 +38,4 @@ date:start:end:description
 03/10:1900:2300:String interpolation, functions, subses
 04/10:1100:1600:General cleanup, demo, tests
 05/10:2030:2120:Fixing bugs and added floats
+08/10:2250:2300:Change int() casts to float(), seems to work
