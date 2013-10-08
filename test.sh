@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for f in examples/*.pl tests/*[0-7].pl demo/*.pl; do
+for f in examples/*.pl tests/*.pl demo/*.pl; do
   input="/dev/null"
   finput=${f/.pl/.in}
 
