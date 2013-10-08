@@ -1,6 +1,7 @@
 #!/usr/bin/python2 -u
 
 import sys, re, itertools
+from math import floor, fabs
 
 __all__ = ('__p2p_argv __p2p_print __p2p_printf ' +
     '__p2p_chomp __p2p_split __p2p_join ' +
@@ -19,10 +20,15 @@ def __p2p_to_string(v):
   elif type(v) is dict:
     return ''.join(
         [ __p2p_to_string(k) + __p2p_to_string(v) for k,v in v.iteritems() ])
+  elif type(v) is float:
+    # Try to truncate
+    if fabs(v - int(floor(v))) < 1e-9:
+      return str(int(floor(v)))
+    return str(v)
   else:
     return str(v)
 
-__int, __str, __len, __re = int, __p2p_to_string, len, re
+__int, __str, __len, __re = float, __p2p_to_string, len, re
 __p2p_argv = sys.argv[1:]
 __p2p_matchgroups = None
 
