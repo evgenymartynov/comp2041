@@ -149,92 +149,22 @@ sub p_node_with_value {
 
 # Does not operate on the global %tok.
 sub interpolate_string {
-  my @cld = ();
-  my $node = {
-    'type' => 'comma_sep_string_concat',
-    'cld' => \@cld,
-  };
-
   my $tok = shift;
   my $quoted_string = $tok->{match};
   my $string = substr $quoted_string, 1, -1;
 
   # Empty string?
-  if (!$string) {
-    return p_node_with_value('string', '');
-  }
+  return p_node_with_value('string', '') if !$string;
 
   my $is_raw = ($quoted_string =~ /^'/);
   if ($is_raw) {
     my %raw_node = %{p_node_with_value('string', $string)};
     $raw_node{raw_string} = 1;
-
-    push @cld, \%raw_node;
-
-    return $node;
+    return \%raw_node;
   }
 
   # At this point, we know we have to do it :(
   return StringInterpolator::interpolate_string($string);
-  return actually_interpolate($string);
-}
-
-sub actually_interpolate {
-  my ($string, $force_raw) = @_;
-
-  my @cld = ();
-  my $node = {
-    'type' => 'comma_sep_string_concat',
-    'cld' => \@cld,
-  };
-
-  my $id_regex = qr((((\$|@)\w+)({[^]]+}|\[[A-Za-z0-9_]+\])?)); # Capture group makes split return seps too
-  my @fragments = split $id_regex, $string;
-  my $last_text_fragment = undef;
-
-  # Every second and fourth capgroup are garbage: ignore them
-  my @temp = ();
-  while (@fragments) {
-    push @temp, shift @fragments;
-    shift @fragments;
-    push @temp, shift @fragments;
-    shift @fragments;
-    push @temp, shift @fragments;
-  }
-  @fragments = @temp;
-
-  # Combine fragments if they end with a backslash (that must escape the sigil)
-  @temp = ();
-  while (@fragments) {
-    my $str = shift @fragments;
-    my $var = shift @fragments;
-    my $acs = shift @fragments;
-
-    if (substr($str, -1) eq '\\') {
-      unshift @fragments, ($str . $var . ($acs || '') . (shift @fragments));
-    } else {
-      push @temp, $str, $var, $acs;
-    }
-  }
-  @fragments = @temp;
-
-  while (@fragments) {
-    my $text = shift @fragments;
-    my $var  = shift @fragments;
-    my $accessors = shift @fragments;
-
-    push @cld, p_node_with_value('string', $text) if $text;
-    if ($text && $force_raw) { $cld[-1]->{'raw_string'} = 1; }
-    push @cld, p_stringify(p_variable_from_string($var, $accessors)) if defined($var);
-
-    $last_text_fragment = defined($var) ? undef : $text;
-  }
-
-  if ($#cld == 0) {  # Bloody perl
-    return $cld[0];
-  }
-
-  return $node;
 }
 
 sub p_string {
@@ -253,7 +183,7 @@ sub p_regexp {
   }
   $match = substr $match, 2, -1;  # Strip the m/ and /
 
-  return p_node('regexp', actually_interpolate($match, 1));
+  return p_node('regexp', StringInterpolator::interpolate_string($match, 1));
 }
 
 sub p_subtitution {
