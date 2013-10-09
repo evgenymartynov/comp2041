@@ -31,6 +31,8 @@ our @rules = (
         \\.                 # Backslashes should escape
         |                   # ...or not
         [^$pat_sigil\]\}]   # if not, stop at sigils or closing brackets
+        |
+        \$$                 # Or a dollar at the end
       )+}xs
   ],
 );
