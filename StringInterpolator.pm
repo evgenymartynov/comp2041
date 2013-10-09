@@ -149,6 +149,17 @@ sub interpolate_string {
   my ($input, $mark_as_raw) = @_;
   my @tokens = lex($input);
   my $node = parse(\@tokens);
+
+  if ($mark_as_raw) {
+    foreach my $child (@{$node->{cld}}) {
+      $child->{raw_string} = 1 if $child->{type} eq 'string';
+    }
+  }
+
+  if (!$#{$node->{cld}}) {
+    return $node->{cld}->[0];
+  }
+
   return $node;
 }
 
