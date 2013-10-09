@@ -399,7 +399,12 @@ sub compile_binary_op_expr {
 
   while (defined($rop_ref)) {
     emit_token(convert_op($node->{operator}));
+
+    my @safe_tokens = qw(number string integrify stringify);
+
+    emit_token('(') unless $rop_ref->{type} ~~ @safe_tokens;
     compile_node($coercer->($rop_ref));
+    emit_token(')') unless $rop_ref->{type} ~~ @safe_tokens;
 
     $rop_ref = shift @{$node->{cld}};
   }
