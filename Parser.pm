@@ -355,8 +355,9 @@ sub p_variable {
 }
 
 sub p_function_call {
-  my $func = substr $tok{match}, 1;
-  expect('function');
+  my $func = $tok{match};
+  $func =~ s/^&//;
+  consume();  # function name
 
   my $empty = { 'type' => 'empty', 'cld' => [] };
 
@@ -375,7 +376,7 @@ sub p_simple_value {
     when ('variable')   { return p_variable();       }
     when ('string')     { return p_string();         }
     when ('number')     { return p_literal_number(); }
-    when ('function')   { return p_function_call();  }
+    when (['function', 'word'])   { return p_function_call();  }
     when ('regexp')     { return p_regexp(); }
     when ('substitute') { return p_subtitution(); }
     when ('parenbegin') { return p_expression_start(); }
