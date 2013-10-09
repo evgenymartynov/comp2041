@@ -316,7 +316,7 @@ sub compile_assignment {
   }
 
   compile_node($lvalue_ref);
-  emit_token(($node->{operator} || '') . '=');
+  emit_token(convert_op($node->{operator} || '') . '=');
   compile_node($rvalue_ref);
 }
 
