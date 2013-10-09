@@ -379,7 +379,7 @@ sub p_simple_value {
     when (['function', 'word'])   { return p_function_call();  }
     when ('regexp')     { return p_regexp(); }
     when ('substitute') { return p_subtitution(); }
-    when ('parenbegin') { return p_expression_start(); }
+    when ('parenbegin') { return p_expression_list(); }
     when ('arraybegin') { return p_expression_start(); }
     when ('blockbegin') { return p_expression_start(); }
     when ('list_op')    { return p_func_call(); }
@@ -390,6 +390,14 @@ sub p_simple_value {
       die parser_skip_to_next_statement('simple value', $tok{type});
     }
   }
+}
+
+sub p_expression_list {
+  expect('parenbegin');
+  my $node = p_expression_start();
+  expect('parenend');
+
+  return p_parenthesise($node);
 }
 
 # I don't care about cases like ++$x++ for two reasons:
@@ -824,7 +832,7 @@ sub p_expression_postfix_conditionals {
 
 sub p_expression_start {
   my $type = $tok{type};
-  my $gobble = $type ~~ ['parenbegin', 'arraybegin', 'blockbegin'];
+  my $gobble = $type ~~ ['arraybegin', 'blockbegin'];
 
   # Safeguard against empty expressions (i.e. ;;;;)
   if ($tok{type} eq 'semicolon') {
